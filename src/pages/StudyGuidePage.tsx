@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { getLectureById } from '../data/curriculum';
 import { getMockStudyGuideByLectureId } from '../data/mockContent';
+import { BottomNav } from '../components/BottomNav';
 
 export const StudyGuidePage = () => {
   const { id } = useParams<{ id: string }>();
@@ -9,104 +10,113 @@ export const StudyGuidePage = () => {
   const guide = getMockStudyGuideByLectureId(id ?? '');
 
   return (
-    <div className="app-container bg-bg-light min-h-screen pb-8">
-      {/* Hero header */}
-      <div className="bg-bg-dark px-5 pt-12 pb-8 relative overflow-hidden">
-        {/* Background decoration */}
-        <div className="absolute top-0 right-0 w-48 h-48 bg-primary/20 rounded-full -translate-y-1/2 translate-x-1/2" />
-        <div className="absolute bottom-0 left-0 w-32 h-32 bg-primary/10 rounded-full translate-y-1/2 -translate-x-1/2" />
+    <div className="app-container bg-bg-light min-h-screen flex flex-col">
+      {/* Nav */}
+      <nav className="sticky top-0 z-50 flex items-center bg-bg-light/80 backdrop-blur-md px-4 py-3 border-b border-primary/10">
+        <button onClick={() => navigate(-1)} className="w-10 h-10 flex items-center text-slate-800">
+          <span className="material-symbols-outlined text-[22px]">arrow_back</span>
+        </button>
+        <h2 className="text-base font-bold text-slate-900 flex-1 text-center">AI 학습 가이드</h2>
+        <button className="w-10 h-10 flex items-center justify-end text-slate-500">
+          <span className="material-symbols-outlined text-[22px]">share</span>
+        </button>
+      </nav>
 
-        <div className="relative z-10">
-          <button onClick={() => navigate(-1)} className="flex items-center gap-1.5 text-white/60 hover:text-white transition-colors mb-6">
-            <span className="material-symbols-outlined text-[18px]">arrow_back</span>
-            <span className="text-sm">뒤로</span>
-          </button>
-
-          <div className="flex items-center gap-2 mb-3">
-            <span className="text-[11px] font-bold text-primary/80 bg-primary/20 px-2.5 py-1 rounded-full uppercase tracking-wide">
-              AI 학습 가이드
-            </span>
+      <div className="flex-1 pb-28">
+        {/* Hero */}
+        <header className="px-4 py-5">
+          <div className="relative overflow-hidden rounded-xl aspect-[16/9] bg-slate-800">
+            <div className="absolute inset-0 bg-gradient-to-br from-bg-dark to-slate-700" />
+            <div className="absolute inset-0 flex items-center justify-center opacity-10">
+              <span className="material-symbols-outlined text-white text-[120px]">auto_stories</span>
+            </div>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+            <div className="absolute bottom-0 p-5">
+              <div className="mb-2">
+                <span className="text-[10px] font-bold text-primary/80 bg-primary/20 px-2 py-0.5 rounded-full uppercase tracking-widest">
+                  AI 에디토리얼
+                </span>
+              </div>
+              <h1 className="text-white text-xl font-bold leading-snug">
+                {lecture?.topic ?? '학습 가이드'}
+              </h1>
+              {lecture && (
+                <p className="text-white/50 text-xs mt-1">{lecture.date} · {lecture.instructor}</p>
+              )}
+            </div>
           </div>
-          <h1 className="text-xl font-bold text-white leading-snug">
-            {lecture?.topic ?? '학습 가이드'}
-          </h1>
-          {lecture && (
-            <p className="text-white/50 text-xs mt-1.5">{lecture.date} · {lecture.instructor}</p>
-          )}
-        </div>
+        </header>
+
+        <main className="px-4 space-y-4">
+          {/* Summary */}
+          <section>
+            <h3 className="text-base font-bold text-slate-900 mb-3">핵심 요약</h3>
+            <div className="space-y-2.5">
+              {guide.keyPoints.map((point, i) => (
+                <div key={i} className="flex gap-4 p-4 rounded-xl bg-white border border-slate-100">
+                  <span className="text-primary font-bold text-sm shrink-0">{String(i + 1).padStart(2, '0')}</span>
+                  <p className="text-sm text-slate-700 leading-relaxed">{point}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* Full summary */}
+          <section className="bg-white rounded-xl border border-slate-100 p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="material-symbols-outlined text-primary text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>summarize</span>
+              <h3 className="text-sm font-bold text-slate-900">강의 요약</h3>
+            </div>
+            <p className="text-sm text-slate-600 leading-relaxed">{guide.summary}</p>
+          </section>
+
+          {/* Review checklist */}
+          <section className="bg-white rounded-xl border border-slate-100 p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="material-symbols-outlined text-primary text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>checklist</span>
+              <h3 className="text-sm font-bold text-slate-900">복습 체크리스트</h3>
+            </div>
+            <div className="space-y-2.5">
+              {guide.reviewPoints.map((pt, i) => (
+                <label key={i} className="flex items-start gap-3 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    className="mt-0.5 w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary cursor-pointer"
+                  />
+                  <p className="text-sm text-slate-600 leading-relaxed group-hover:text-slate-900 transition-colors">{pt}</p>
+                </label>
+              ))}
+            </div>
+          </section>
+
+          {/* Concept map */}
+          <section className="bg-white rounded-xl border border-slate-100 p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="material-symbols-outlined text-primary text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>hub</span>
+              <h3 className="text-sm font-bold text-slate-900">개념 맵</h3>
+            </div>
+            <div className="space-y-4">
+              {guide.conceptMap.map((item, i) => (
+                <div key={i}>
+                  <div className="inline-flex items-center gap-1.5 bg-primary/10 text-primary px-3 py-1.5 rounded-lg mb-2">
+                    <span className="material-symbols-outlined text-[14px]" style={{ fontVariationSettings: "'FILL' 1" }}>lightbulb</span>
+                    <span className="text-sm font-bold">{item.name}</span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5 pl-2">
+                    {item.related.map((r, j) => (
+                      <span key={j} className="text-xs bg-slate-50 border border-slate-200 text-slate-600 px-2.5 py-1 rounded-full">
+                        {r}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        </main>
       </div>
 
-      <div className="px-4 -mt-3 flex flex-col gap-4 pb-8">
-        {/* Summary */}
-        <div className="bg-white rounded-2xl p-5 shadow-sm">
-          <div className="flex items-center gap-2 mb-3">
-            <span className="material-symbols-outlined text-primary text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>summarize</span>
-            <h2 className="text-sm font-bold text-gray-900">강의 요약</h2>
-          </div>
-          <p className="text-sm text-gray-600 leading-relaxed">{guide.summary}</p>
-        </div>
-
-        {/* Key points */}
-        <div className="bg-white rounded-2xl p-5 shadow-sm">
-          <div className="flex items-center gap-2 mb-3">
-            <span className="material-symbols-outlined text-primary text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
-            <h2 className="text-sm font-bold text-gray-900">핵심 포인트</h2>
-          </div>
-          <div className="flex flex-col gap-2.5">
-            {guide.keyPoints.map((point, i) => (
-              <div key={i} className="flex items-start gap-3">
-                <div className="w-5 h-5 bg-primary-light rounded-full flex items-center justify-center shrink-0 mt-0.5">
-                  <span className="text-[9px] font-bold text-primary">{i + 1}</span>
-                </div>
-                <p className="text-sm text-gray-700 leading-relaxed">{point}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Review checklist */}
-        <div className="bg-white rounded-2xl p-5 shadow-sm">
-          <div className="flex items-center gap-2 mb-3">
-            <span className="material-symbols-outlined text-blue-500 text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>checklist</span>
-            <h2 className="text-sm font-bold text-gray-900">복습 체크리스트</h2>
-          </div>
-          <div className="flex flex-col gap-2.5">
-            {guide.reviewPoints.map((point, i) => (
-              <div key={i} className="flex items-start gap-3">
-                <div className="w-5 h-5 border-2 border-gray-200 rounded-md shrink-0 mt-0.5 flex items-center justify-center">
-                  <span className="material-symbols-outlined text-[12px] text-gray-300">check</span>
-                </div>
-                <p className="text-sm text-gray-600 leading-relaxed">{point}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Concept map */}
-        <div className="bg-white rounded-2xl p-5 shadow-sm">
-          <div className="flex items-center gap-2 mb-3">
-            <span className="material-symbols-outlined text-purple-500 text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>hub</span>
-            <h2 className="text-sm font-bold text-gray-900">개념 맵</h2>
-          </div>
-          <div className="flex flex-col gap-4">
-            {guide.conceptMap.map((item, i) => (
-              <div key={i}>
-                <div className="inline-flex items-center gap-1.5 bg-primary-light px-3 py-1.5 rounded-xl mb-2">
-                  <span className="material-symbols-outlined text-primary text-[14px]" style={{ fontVariationSettings: "'FILL' 1" }}>lightbulb</span>
-                  <span className="text-sm font-bold text-primary">{item.name}</span>
-                </div>
-                <div className="flex flex-wrap gap-1.5 pl-2">
-                  {item.related.map((r, j) => (
-                    <span key={j} className="text-xs bg-gray-50 border border-gray-100 text-gray-600 px-2.5 py-1 rounded-full">
-                      {r}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+      <BottomNav active="study" />
     </div>
   );
 };

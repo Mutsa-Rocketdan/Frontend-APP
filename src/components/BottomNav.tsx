@@ -1,41 +1,40 @@
 import { Link, useLocation } from 'react-router-dom';
 
 const NAV_ITEMS = [
-  { to: '/', icon: 'home', label: '홈' },
-  { to: '/my-lectures', icon: 'school', label: '내 강의' },
-  { to: '/quiz-results', icon: 'bar_chart', label: '학습현황' },
-  { to: '/profile', icon: 'person', label: '마이페이지' },
+  { id: 'home',      to: '/',          icon: 'home',      label: '홈' },
+  { id: 'study',     to: '/curriculum', icon: 'menu_book', label: '학습' },
+  { id: 'community', to: '#',           icon: 'group',     label: '커뮤니티' },
+  { id: 'profile',   to: '/profile',    icon: 'person',    label: '마이' },
 ];
 
-export const BottomNav = () => {
+export const BottomNav = ({ active }: { active?: string }) => {
   const { pathname } = useLocation();
+  const resolveActive = (item: typeof NAV_ITEMS[0]) => {
+    if (active) return active === item.id;
+    if (item.to === '/') return pathname === '/';
+    return pathname.startsWith(item.to);
+  };
 
   return (
-    <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-app bg-white border-t border-gray-100 z-50">
-      <div className="flex">
-        {NAV_ITEMS.map((item) => {
-          const active = pathname === item.to || (item.to !== '/' && pathname.startsWith(item.to));
-          return (
-            <Link
-              key={item.to}
-              to={item.to}
-              className="flex-1 flex flex-col items-center gap-0.5 py-2.5 transition-colors"
+    <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-app z-50 flex border-t border-slate-200 bg-bg-light/95 backdrop-blur-md px-4 pb-6 pt-2">
+      {NAV_ITEMS.map((item) => {
+        const on = resolveActive(item);
+        return (
+          <Link
+            key={item.id}
+            to={item.to}
+            className={`flex flex-1 flex-col items-center justify-center gap-1 transition-colors ${on ? 'text-primary' : 'text-slate-400'}`}
+          >
+            <span
+              className="material-symbols-outlined text-[26px]"
+              style={{ fontVariationSettings: on ? "'FILL' 1, 'wght' 500" : "'FILL' 0, 'wght' 400" }}
             >
-              <span
-                className={`material-symbols-outlined text-[26px] transition-colors ${
-                  active ? 'text-primary' : 'text-gray-400'
-                }`}
-                style={{ fontVariationSettings: active ? "'FILL' 1, 'wght' 500" : "'FILL' 0, 'wght' 400" }}
-              >
-                {item.icon}
-              </span>
-              <span className={`text-[10px] font-medium transition-colors ${active ? 'text-primary' : 'text-gray-400'}`}>
-                {item.label}
-              </span>
-            </Link>
-          );
-        })}
-      </div>
+              {item.icon}
+            </span>
+            <p className="text-[10px] font-semibold leading-none">{item.label}</p>
+          </Link>
+        );
+      })}
     </nav>
   );
 };

@@ -1,96 +1,105 @@
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { LECTURES, WEEKS } from '../data/curriculum';
+import { BottomNav } from '../components/BottomNav';
 
-const WEEK_LABELS = ['', '1주차', '2주차', '3주차'];
-const SUBJECT_COLORS: Record<string, string> = {
-  '객체지향 프로그래밍': 'bg-purple-100 text-purple-600',
-  'Front-End Programming': 'bg-blue-100 text-blue-600',
-  'Back-End Programming': 'bg-green-100 text-green-600',
+const SUBJECT_SHORT: Record<string, string> = {
+  '객체지향 프로그래밍': 'OOP',
+  'Front-End Programming': 'Frontend',
+  'Back-End Programming': 'Backend',
 };
-const subjectColor = (s: string) => SUBJECT_COLORS[s] || 'bg-gray-100 text-gray-500';
 
 export const LecturesPage = () => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const displayName = user?.nickname || user?.email?.split('@')[0] || '학습자';
-  const totalLectures = LECTURES.length;
+
+  const handleLogout = () => { logout(); navigate('/login'); };
 
   return (
-    <div className="app-container bg-bg-light min-h-screen pb-24">
-      {/* Header */}
-      <div className="bg-white px-5 pt-12 pb-5">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 bg-primary rounded-lg flex items-center justify-center">
-              <span className="material-symbols-outlined text-white text-[16px]" style={{ fontVariationSettings: "'FILL' 1" }}>bolt</span>
-            </div>
-            <span className="text-primary font-bold text-base tracking-tight">멋쟁이사자처럼</span>
+    <div className="app-container bg-bg-light min-h-screen flex flex-col">
+      {/* Sticky Header */}
+      <header className="sticky top-0 z-50 flex items-center bg-bg-light/80 backdrop-blur-md px-5 py-4 justify-between border-b border-primary/10">
+        <div className="flex items-center gap-2">
+          <div className="bg-primary w-7 h-7 rounded-lg flex items-center justify-center">
+            <span className="material-symbols-outlined text-white text-[16px]" style={{ fontVariationSettings: "'FILL' 1" }}>terminal</span>
           </div>
-          <button className="w-9 h-9 flex items-center justify-center rounded-full bg-bg-light">
-            <span className="material-symbols-outlined text-gray-500 text-[22px]">notifications</span>
+          <h1 className="text-slate-900 text-lg font-bold tracking-tight">멋쟁이사자처럼</h1>
+        </div>
+        <div className="flex items-center gap-1">
+          <button className="p-2 rounded-full hover:bg-primary/10 transition-colors">
+            <span className="material-symbols-outlined text-slate-600 text-[22px]">search</span>
+          </button>
+          <button onClick={handleLogout} className="p-2 rounded-full hover:bg-primary/10 transition-colors">
+            <span className="material-symbols-outlined text-slate-600 text-[22px]">logout</span>
           </button>
         </div>
+      </header>
 
-        <p className="text-gray-400 text-sm">안녕하세요,</p>
-        <h1 className="text-xl font-bold text-gray-900 mt-0.5">{displayName}님 👋</h1>
+      <main className="flex-1 px-5 py-7 pb-28 space-y-8">
+        {/* Greeting */}
+        <section>
+          <h2 className="text-2xl font-bold tracking-tight text-slate-900">안녕하세요, {displayName}님</h2>
+          <p className="text-slate-500 font-medium mt-1">오늘도 성장을 위한 학습을 이어가세요.</p>
 
-        {/* Stats */}
-        <div className="grid grid-cols-3 gap-3 mt-4">
-          <div className="bg-primary-light rounded-2xl p-3.5 text-center">
-            <p className="text-2xl font-bold text-primary">{totalLectures}</p>
-            <p className="text-xs text-primary/70 mt-0.5 font-medium">전체 강의</p>
+          {/* Stats grid */}
+          <div className="grid grid-cols-2 gap-3 mt-5">
+            {[
+              { label: '전체 강의', val: LECTURES.length, highlight: true },
+              { label: '학습 주차', val: WEEKS.length },
+              { label: '출석 일수', val: 28 },
+              { label: 'AI 생성', val: '∞' },
+            ].map((s, i) => (
+              <div key={i} className={`rounded-xl p-5 border ${s.highlight ? 'bg-primary/5 border-primary/10' : 'bg-white border-slate-100'}`}>
+                <p className="text-slate-500 text-xs font-medium">{s.label}</p>
+                <p className={`text-3xl font-bold leading-tight mt-1 ${s.highlight ? 'text-primary' : 'text-slate-900'}`}>{s.val}</p>
+              </div>
+            ))}
           </div>
-          <div className="bg-bg-light rounded-2xl p-3.5 text-center">
-            <p className="text-2xl font-bold text-gray-700">3</p>
-            <p className="text-xs text-gray-400 mt-0.5 font-medium">학습 주차</p>
-          </div>
-          <div className="bg-bg-light rounded-2xl p-3.5 text-center">
-            <p className="text-2xl font-bold text-gray-700">AI</p>
-            <p className="text-xs text-gray-400 mt-0.5 font-medium">자동 생성</p>
-          </div>
-        </div>
-      </div>
+        </section>
 
-      {/* Lecture list by week */}
-      <div className="px-5 pt-5 flex flex-col gap-6">
-        {WEEKS.map((week) => {
-          const weekLectures = LECTURES.filter((l) => l.week === week);
-          return (
-            <div key={week}>
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-6 h-6 bg-primary rounded-lg flex items-center justify-center">
-                  <span className="text-white text-[10px] font-bold">{week}W</span>
+        {/* Lecture list by week */}
+        <section>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-bold tracking-tight text-slate-900">강의 목록</h3>
+            <span className="text-xs text-slate-400 font-medium">{LECTURES.length}개 강의</span>
+          </div>
+
+          <div className="space-y-3">
+            {LECTURES.map((lecture) => (
+              <div
+                key={lecture.id}
+                onClick={() => navigate(`/lectures/${lecture.id}`)}
+                className="group flex gap-4 items-center p-4 rounded-xl bg-white border border-slate-100 hover:border-primary/30 transition-all cursor-pointer active:scale-[0.98]"
+              >
+                {/* Thumb */}
+                <div className="w-16 h-14 rounded-lg bg-slate-100 flex items-center justify-center shrink-0">
+                  <span className="material-symbols-outlined text-slate-300 text-[28px]">
+                    {lecture.subject.includes('Back') ? 'storage' : lecture.subject.includes('Front') ? 'code' : 'auto_awesome'}
+                  </span>
                 </div>
-                <h2 className="text-sm font-bold text-gray-700">{WEEK_LABELS[week]}</h2>
-                <span className="text-xs text-gray-300">· {weekLectures.length}강</span>
-              </div>
 
-              <div className="flex flex-col gap-2.5">
-                {weekLectures.map((lecture, idx) => (
-                  <Link
-                    key={lecture.id}
-                    to={`/lectures/${lecture.id}`}
-                    className="bg-white rounded-2xl p-4 flex items-center gap-3.5 active:scale-[0.98] transition-transform shadow-sm"
-                  >
-                    <div className="w-10 h-10 rounded-xl bg-bg-light flex items-center justify-center shrink-0">
-                      <span className="text-sm font-bold text-gray-400">{String(idx + 1).padStart(2, '0')}</span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <span className={`inline-flex text-[10px] font-semibold px-2 py-0.5 rounded-full mb-1 ${subjectColor(lecture.subject)}`}>
-                        {lecture.subject === 'Front-End Programming' ? 'Frontend' :
-                         lecture.subject === 'Back-End Programming' ? 'Backend' : 'OOP'}
-                      </span>
-                      <p className="text-sm font-semibold text-gray-900 leading-snug truncate">{lecture.topic}</p>
-                      <p className="text-xs text-gray-400 mt-0.5">{lecture.date}</p>
-                    </div>
-                    <span className="material-symbols-outlined text-gray-300 text-[20px] shrink-0">chevron_right</span>
-                  </Link>
-                ))}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <span className="px-1.5 py-0.5 rounded bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider">
+                      Week {String(lecture.week).padStart(2, '0')}
+                    </span>
+                    <span className="text-slate-400 text-[10px] font-medium">{SUBJECT_SHORT[lecture.subject] ?? lecture.subject}</span>
+                  </div>
+                  <h4 className="text-sm font-bold text-slate-900 group-hover:text-primary transition-colors leading-snug truncate">
+                    {lecture.topic}
+                  </h4>
+                  <p className="text-[11px] text-slate-400 mt-0.5">{lecture.date}</p>
+                </div>
+
+                <span className="material-symbols-outlined text-slate-300 text-[20px] shrink-0">chevron_right</span>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            ))}
+          </div>
+        </section>
+      </main>
+
+      <BottomNav active="home" />
     </div>
   );
 };

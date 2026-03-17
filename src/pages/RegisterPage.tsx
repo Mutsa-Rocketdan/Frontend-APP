@@ -3,19 +3,22 @@ import { Link, useNavigate } from 'react-router-dom';
 import { register } from '../api/auth';
 
 export const RegisterPage = () => {
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [nickname, setNickname] = useState('');
   const [password, setPassword] = useState('');
+  const [showPw, setShowPw] = useState(false);
+  const [agreed, setAgreed] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!agreed) { setError('이용약관에 동의해주세요.'); return; }
     setError('');
     setLoading(true);
     try {
-      await register(email, password, nickname);
+      await register(email, password, name);
       navigate('/login');
     } catch (err: unknown) {
       const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
@@ -26,85 +29,116 @@ export const RegisterPage = () => {
   };
 
   return (
-    <div className="app-container bg-white min-h-screen flex flex-col">
+    <div className="app-container bg-bg-light min-h-screen flex flex-col">
       {/* Header */}
-      <div className="flex items-center px-4 pt-12 pb-2">
-        <button onClick={() => navigate(-1)} className="p-2 -ml-2 rounded-full hover:bg-gray-50 transition-colors">
-          <span className="material-symbols-outlined text-gray-700 text-[24px]">arrow_back</span>
+      <div className="flex items-center justify-between px-4 pt-12 pb-2">
+        <button
+          onClick={() => navigate(-1)}
+          className="w-11 h-11 flex items-center justify-start text-slate-800"
+        >
+          <span className="material-symbols-outlined text-[24px]">arrow_back</span>
         </button>
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 bg-primary rounded-lg flex items-center justify-center">
+            <span className="material-symbols-outlined text-white text-[16px]" style={{ fontVariationSettings: "'FILL' 1" }}>school</span>
+          </div>
+          <span className="font-bold text-base tracking-tight text-slate-900">LIKE LION</span>
+        </div>
+        <div className="w-11" />
       </div>
 
-      <div className="px-6 pb-4">
-        <h1 className="text-2xl font-bold text-gray-900 leading-tight">회원가입</h1>
-        <p className="text-gray-400 text-sm mt-1">AI 복습 퀴즈 & 학습 가이드 시작하기</p>
+      {/* Heading */}
+      <div className="px-6 pt-8 pb-4">
+        <h1 className="text-[32px] font-bold tracking-tight text-slate-900 leading-tight">새로운 학습의 시작</h1>
+        <p className="text-slate-500 text-base mt-2">멋쟁이사자처럼에서 성장을 시작하세요.</p>
       </div>
 
       {/* Form */}
-      <div className="flex-1 px-6 pb-8 flex flex-col">
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4 flex-1">
-          <div>
-            <label className="block text-xs font-semibold text-gray-500 mb-1.5 uppercase tracking-wide">이메일 *</label>
+      <form onSubmit={handleSubmit} className="flex flex-col flex-1 px-6 gap-4 pb-8">
+        <div className="space-y-4">
+          <div className="space-y-1.5">
+            <label className="block text-sm font-semibold text-slate-700 ml-0.5">이름</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="성함을 입력해주세요"
+              className="w-full rounded-xl border-2 border-slate-200 bg-white h-14 px-4 text-slate-900 placeholder:text-slate-300 focus:border-primary outline-none transition-all"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="block text-sm font-semibold text-slate-700 ml-0.5">이메일 *</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              placeholder="email@example.com"
-              className="w-full bg-bg-light border border-transparent focus:border-primary focus:bg-white text-gray-900 rounded-xl px-4 py-3.5 text-sm outline-none transition-all placeholder:text-gray-300"
+              placeholder="example@likelion.net"
+              className="w-full rounded-xl border-2 border-slate-200 bg-white h-14 px-4 text-slate-900 placeholder:text-slate-300 focus:border-primary outline-none transition-all"
             />
           </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-gray-500 mb-1.5 uppercase tracking-wide">
-              닉네임 <span className="text-gray-300 normal-case font-normal">(선택)</span>
-            </label>
-            <input
-              type="text"
-              value={nickname}
-              onChange={(e) => setNickname(e.target.value)}
-              placeholder="닉네임을 입력하세요"
-              className="w-full bg-bg-light border border-transparent focus:border-primary focus:bg-white text-gray-900 rounded-xl px-4 py-3.5 text-sm outline-none transition-all placeholder:text-gray-300"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-gray-500 mb-1.5 uppercase tracking-wide">비밀번호 *</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              placeholder="6자 이상 입력하세요"
-              minLength={6}
-              className="w-full bg-bg-light border border-transparent focus:border-primary focus:bg-white text-gray-900 rounded-xl px-4 py-3.5 text-sm outline-none transition-all placeholder:text-gray-300"
-            />
-          </div>
-
-          {error && (
-            <div className="flex items-center gap-2 bg-red-50 text-red-500 text-sm px-3 py-2.5 rounded-xl">
-              <span className="material-symbols-outlined text-[16px]">error</span>
-              {error}
+          <div className="space-y-1.5">
+            <label className="block text-sm font-semibold text-slate-700 ml-0.5">비밀번호 *</label>
+            <div className="relative">
+              <input
+                type={showPw ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={8}
+                placeholder="8자 이상의 영문, 숫자 조합"
+                className="w-full rounded-xl border-2 border-slate-200 bg-white h-14 px-4 pr-12 text-slate-900 placeholder:text-slate-300 focus:border-primary outline-none transition-all"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPw(!showPw)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary transition-colors"
+              >
+                <span className="material-symbols-outlined text-[20px]">
+                  {showPw ? 'visibility_off' : 'visibility'}
+                </span>
+              </button>
             </div>
-          )}
+          </div>
+        </div>
 
-          <div className="flex-1" />
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-primary hover:bg-primary-dark disabled:opacity-50 text-white font-bold py-4 rounded-xl transition-all text-sm"
-          >
-            {loading ? '처리 중...' : '가입 완료'}
-          </button>
-
-          <p className="text-center text-gray-400 text-sm">
-            이미 계정이 있으신가요?{' '}
-            <Link to="/login" className="text-primary font-semibold hover:underline">
-              로그인
-            </Link>
+        {/* Terms */}
+        <label className="flex items-start gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={agreed}
+            onChange={(e) => setAgreed(e.target.checked)}
+            className="mt-0.5 rounded border-slate-300 text-primary focus:ring-primary"
+          />
+          <p className="text-xs text-slate-500 leading-relaxed">
+            가입 시 멋쟁이사자처럼의{' '}
+            <span className="text-primary underline cursor-pointer">이용약관</span> 및{' '}
+            <span className="text-primary underline cursor-pointer">개인정보처리방침</span>에 동의하게 됩니다.
           </p>
-        </form>
-      </div>
+        </label>
+
+        {error && (
+          <p className="text-sm text-red-500 flex items-center gap-1.5">
+            <span className="material-symbols-outlined text-[14px]">error</span>
+            {error}
+          </p>
+        )}
+
+        <div className="flex-1" />
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full bg-primary hover:bg-primary-dark disabled:opacity-60 text-white font-bold py-4 rounded-xl text-base transition-all active:scale-[0.98]"
+        >
+          {loading ? '처리 중...' : '무료로 시작하기'}
+        </button>
+
+        <div className="flex items-center justify-center gap-2">
+          <span className="text-slate-500 text-sm">이미 계정이 있으신가요?</span>
+          <Link to="/login" className="text-primary text-sm font-bold">로그인</Link>
+        </div>
+      </form>
     </div>
   );
 };
