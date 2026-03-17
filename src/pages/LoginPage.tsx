@@ -11,6 +11,11 @@ export const LoginPage = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
+  const handleDemoMode = () => {
+    localStorage.setItem('access_token', 'demo_mode');
+    navigate('/');
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -87,6 +92,15 @@ export const LoginPage = () => {
               회원가입
             </Link>
           </p>
+
+          <div className="border-t border-gray-100 mt-5 pt-5">
+            <button
+              onClick={handleDemoMode}
+              className="w-full border border-gray-200 hover:border-[#FF6B00] text-gray-500 hover:text-[#FF6B00] text-sm py-2.5 rounded-lg transition-all"
+            >
+              🔍 서버 없이 데모 모드로 체험하기
+            </button>
+          </div>
         </div>
       </div>
     </div>
