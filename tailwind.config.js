@@ -4,11 +4,19 @@ export default {
   theme: {
     extend: {
       colors: {
-        orange: {
-          400: '#fb923c',
-          500: '#f97316',
-          600: '#ea6a0a',
-        },
+        primary: '#ff6a00',
+        'primary-dark': '#e05e00',
+        'primary-light': '#fff0e6',
+        'bg-light': '#f8f7f5',
+        'bg-dark': '#23170f',
+        'surface': '#ffffff',
+      },
+      fontFamily: {
+        sans: ['Lexend', 'Noto Sans KR', 'sans-serif'],
+        korean: ['Noto Sans KR', 'sans-serif'],
+      },
+      maxWidth: {
+        app: '480px',
       },
     },
   },

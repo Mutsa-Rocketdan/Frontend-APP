@@ -1,74 +1,90 @@
-import { useNavigate } from 'react-router-dom';
-import { LECTURES, WEEKS, getSubjectStyle } from '../data/curriculum';
+import { Link } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { LECTURES, WEEKS } from '../data/curriculum';
+
+const WEEK_LABELS = ['', '1주차', '2주차', '3주차'];
+const SUBJECT_COLORS: Record<string, string> = {
+  '객체지향 프로그래밍': 'bg-purple-100 text-purple-600',
+  'Front-End Programming': 'bg-blue-100 text-blue-600',
+  'Back-End Programming': 'bg-green-100 text-green-600',
+};
+const subjectColor = (s: string) => SUBJECT_COLORS[s] || 'bg-gray-100 text-gray-500';
 
 export const LecturesPage = () => {
-  const navigate = useNavigate();
+  const { user } = useAuth();
+  const displayName = user?.nickname || user?.email?.split('@')[0] || '학습자';
+  const totalLectures = LECTURES.length;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Hero */}
-      <div className="bg-white border-b border-gray-200 px-4 py-8 md:py-12">
-        <div className="max-w-4xl mx-auto">
-          <p className="text-orange-500 text-sm font-semibold mb-2">KDT Backend 21기</p>
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
-            AI 복습 퀴즈 & 학습 가이드
-          </h1>
-          <p className="text-gray-500 text-sm md:text-base">
-            강의를 선택하면 AI가 핵심 개념 추출 · 퀴즈 · 학습 가이드를 자동으로 생성합니다
-          </p>
+    <div className="app-container bg-bg-light min-h-screen pb-24">
+      {/* Header */}
+      <div className="bg-white px-5 pt-12 pb-5">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 bg-primary rounded-lg flex items-center justify-center">
+              <span className="material-symbols-outlined text-white text-[16px]" style={{ fontVariationSettings: "'FILL' 1" }}>bolt</span>
+            </div>
+            <span className="text-primary font-bold text-base tracking-tight">멋쟁이사자처럼</span>
+          </div>
+          <button className="w-9 h-9 flex items-center justify-center rounded-full bg-bg-light">
+            <span className="material-symbols-outlined text-gray-500 text-[22px]">notifications</span>
+          </button>
+        </div>
+
+        <p className="text-gray-400 text-sm">안녕하세요,</p>
+        <h1 className="text-xl font-bold text-gray-900 mt-0.5">{displayName}님 👋</h1>
+
+        {/* Stats */}
+        <div className="grid grid-cols-3 gap-3 mt-4">
+          <div className="bg-primary-light rounded-2xl p-3.5 text-center">
+            <p className="text-2xl font-bold text-primary">{totalLectures}</p>
+            <p className="text-xs text-primary/70 mt-0.5 font-medium">전체 강의</p>
+          </div>
+          <div className="bg-bg-light rounded-2xl p-3.5 text-center">
+            <p className="text-2xl font-bold text-gray-700">3</p>
+            <p className="text-xs text-gray-400 mt-0.5 font-medium">학습 주차</p>
+          </div>
+          <div className="bg-bg-light rounded-2xl p-3.5 text-center">
+            <p className="text-2xl font-bold text-gray-700">AI</p>
+            <p className="text-xs text-gray-400 mt-0.5 font-medium">자동 생성</p>
+          </div>
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 py-6 md:py-10">
+      {/* Lecture list by week */}
+      <div className="px-5 pt-5 flex flex-col gap-6">
         {WEEKS.map((week) => {
           const weekLectures = LECTURES.filter((l) => l.week === week);
           return (
-            <div key={week} className="mb-8 md:mb-12">
-              {/* Week Header */}
-              <div className="flex items-center gap-3 mb-4">
-                <span className="bg-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full">
-                  {week}주차
-                </span>
-                <div className="h-px flex-1 bg-gray-200" />
+            <div key={week}>
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-6 h-6 bg-primary rounded-lg flex items-center justify-center">
+                  <span className="text-white text-[10px] font-bold">{week}W</span>
+                </div>
+                <h2 className="text-sm font-bold text-gray-700">{WEEK_LABELS[week]}</h2>
+                <span className="text-xs text-gray-300">· {weekLectures.length}강</span>
               </div>
 
-              {/* Lecture Cards */}
-              <div className="grid gap-3">
+              <div className="flex flex-col gap-2.5">
                 {weekLectures.map((lecture, idx) => (
-                  <button
+                  <Link
                     key={lecture.id}
-                    onClick={() => navigate(`/lectures/${lecture.id}`)}
-                    className="w-full text-left bg-white border border-gray-200 hover:border-orange-400 hover:shadow-md rounded-xl p-4 md:p-5 transition-all group"
+                    to={`/lectures/${lecture.id}`}
+                    className="bg-white rounded-2xl p-4 flex items-center gap-3.5 active:scale-[0.98] transition-transform shadow-sm"
                   >
-                    <div className="flex items-start gap-3 md:gap-4">
-                      {/* Day number */}
-                      <div className="shrink-0 w-9 h-9 md:w-10 md:h-10 rounded-full bg-gray-100 group-hover:bg-orange-50 flex items-center justify-center">
-                        <span className="text-xs font-bold text-gray-500 group-hover:text-orange-500">
-                          {(week - 1) * 5 + idx + 1}일
-                        </span>
-                      </div>
-
-                      <div className="flex-1 min-w-0">
-                        <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                          <span className={`text-xs font-medium px-2 py-0.5 rounded border ${getSubjectStyle(lecture.subject)}`}>
-                            {lecture.subject}
-                          </span>
-                          <span className="text-xs text-gray-400">{lecture.date}</span>
-                        </div>
-                        <h3 className="text-sm md:text-base font-semibold text-gray-900 group-hover:text-orange-600 transition-colors mb-1">
-                          {lecture.topic}
-                        </h3>
-                        <p className="text-xs text-gray-500 line-clamp-1 hidden md:block">
-                          {lecture.learning_goal}
-                        </p>
-                      </div>
-
-                      {/* Arrow */}
-                      <span className="shrink-0 text-gray-300 group-hover:text-orange-400 text-lg transition-colors">
-                        →
-                      </span>
+                    <div className="w-10 h-10 rounded-xl bg-bg-light flex items-center justify-center shrink-0">
+                      <span className="text-sm font-bold text-gray-400">{String(idx + 1).padStart(2, '0')}</span>
                     </div>
-                  </button>
+                    <div className="flex-1 min-w-0">
+                      <span className={`inline-flex text-[10px] font-semibold px-2 py-0.5 rounded-full mb-1 ${subjectColor(lecture.subject)}`}>
+                        {lecture.subject === 'Front-End Programming' ? 'Frontend' :
+                         lecture.subject === 'Back-End Programming' ? 'Backend' : 'OOP'}
+                      </span>
+                      <p className="text-sm font-semibold text-gray-900 leading-snug truncate">{lecture.topic}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">{lecture.date}</p>
+                    </div>
+                    <span className="material-symbols-outlined text-gray-300 text-[20px] shrink-0">chevron_right</span>
+                  </Link>
                 ))}
               </div>
             </div>

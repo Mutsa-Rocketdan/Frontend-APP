@@ -1,242 +1,219 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { getConcepts } from '../api/lectures';
 import { createQuiz } from '../api/quizzes';
 import { useTaskPoller } from '../hooks/useTaskPoller';
-import { ProgressBar } from '../components/ProgressBar';
 import { getLectureById } from '../data/curriculum';
+import { getMockConceptsByLectureId } from '../data/mockContent';
 import type { ConceptResponse } from '../types';
 
-// 백엔드 없을 때 보여줄 mock 개념
-const MOCK_CONCEPTS: ConceptResponse[] = [
-  { id: 1, lecture_id: 'mock', concept_name: '데코레이터 패턴', description: '기존 객체에 새로운 기능을 동적으로 추가하는 구조적 디자인 패턴. 상속 대신 합성을 사용한다.', mastery_score: 0.3 },
-  { id: 2, lecture_id: 'mock', concept_name: '옵저버 패턴', description: '한 객체의 상태 변화를 다른 객체들에게 자동으로 알리는 행동 패턴. 이벤트 기반 시스템에 활용된다.', mastery_score: 0.6 },
-  { id: 3, lecture_id: 'mock', concept_name: '파사드 패턴', description: '복잡한 서브시스템을 단순한 인터페이스로 감싸는 구조적 패턴. 클라이언트와 시스템 간 결합도를 낮춘다.', mastery_score: 0.0 },
-];
+type Tab = 'concepts' | 'quiz' | 'guide';
 
-const GeneratingModal = ({ label, taskId, onDone }: { label: string; taskId: string; onDone: (id?: string) => void }) => {
-  const task = useTaskPoller(taskId);
-  useEffect(() => {
-    if (task?.status === 'completed') {
-      const resultId = task.result_url?.split('/').pop();
-      setTimeout(() => onDone(resultId), 800);
-    }
-  }, [task?.status, task?.result_url, onDone]);
-
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4">
-      <div className="bg-white rounded-2xl p-8 w-full max-w-sm text-center shadow-xl">
-        <div className="w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-        <p className="font-semibold text-gray-900 mb-1">AI가 {label}을 생성하고 있어요</p>
-        <p className="text-gray-500 text-sm mb-6">잠시만 기다려주세요...</p>
-        <ProgressBar progress={task?.progress ?? 0} />
-        {task?.status === 'failed' && (
-          <p className="text-red-500 text-sm mt-4">생성 중 오류가 발생했습니다.</p>
-        )}
-      </div>
-    </div>
-  );
+const MASTERY_LABEL = (score: number) => {
+  if (score >= 0.7) return { label: '잘 이해함', color: 'text-green-600 bg-green-50' };
+  if (score >= 0.4) return { label: '복습 필요', color: 'text-yellow-600 bg-yellow-50' };
+  return { label: '집중 학습', color: 'text-red-500 bg-red-50' };
 };
 
 export const LectureDetailPage = () => {
   const { id } = useParams<{ id: string }>();
-  const [concepts, setConcepts] = useState<ConceptResponse[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'concepts' | 'quiz' | 'guide'>('concepts');
-  const [quizTaskId, setQuizTaskId] = useState<string | undefined>();
-  const [guideTaskId, setGuideTaskId] = useState<string | undefined>();
-  const [generating, setGenerating] = useState<'quiz' | 'guide' | null>(null);
   const navigate = useNavigate();
-
   const lecture = getLectureById(id ?? '');
+  const [tab, setTab] = useState<Tab>('concepts');
+  const [concepts, setConcepts] = useState<ConceptResponse[]>([]);
+  const [loadingConcepts, setLoadingConcepts] = useState(true);
+  const [quizTaskId, setQuizTaskId] = useState<string | undefined>(undefined);
+  const [generatingQuiz, setGeneratingQuiz] = useState(false);
+
+  const quizTask = useTaskPoller(quizTaskId);
+  const quizStatus = quizTask?.status;
 
   useEffect(() => {
     if (!id) return;
-    // 백엔드 없으면 mock 데이터로 폴백
+    const mock = getMockConceptsByLectureId(id);
+    if (mock.length) {
+      setConcepts(mock);
+      setLoadingConcepts(false);
+      return;
+    }
     getConcepts(id)
       .then((res) => setConcepts(res.data))
-      .catch(() => setConcepts(MOCK_CONCEPTS))
-      .finally(() => setLoading(false));
+      .catch(() => setConcepts(getMockConceptsByLectureId(id)))
+      .finally(() => setLoadingConcepts(false));
   }, [id]);
 
-  const handleCreateQuiz = async () => {
-    if (!id || generating) return;
-    setGenerating('quiz');
+  useEffect(() => {
+    if (quizStatus === 'completed') {
+      navigate(`/quizzes/${id}`);
+    }
+  }, [quizStatus, id, navigate]);
+
+  const handleGenerateQuiz = useCallback(async () => {
+    if (!id || generatingQuiz) return;
+    setGeneratingQuiz(true);
     try {
       const res = await createQuiz(id);
-      if (res.data.task_id) {
-        setQuizTaskId(res.data.task_id);
-      } else {
-        navigate(`/quizzes/${res.data.id}`);
-      }
+      setQuizTaskId(res.data.task_id ?? undefined);
     } catch {
-      // 백엔드 없으면 mock quiz로 이동
-      navigate('/quizzes/mock');
-      setGenerating(null);
-    }
-  };
-
-  const handleCreateGuide = async () => {
-    if (!id || generating) return;
-    setGenerating('guide');
-    try {
-      // TODO: 학습가이드 생성 API 연동 (성진님 추가 예정)
-      // 임시로 mock guide 페이지로 이동
-      navigate(`/lectures/${id}/guide`);
-    } catch {
-      navigate(`/lectures/${id}/guide`);
+      navigate(`/quizzes/${id}`);
     } finally {
-      setGenerating(null);
+      setGeneratingQuiz(false);
     }
-  };
+  }, [id, generatingQuiz, navigate]);
 
-  const handleQuizDone = useCallback((quizId?: string) => {
-    setQuizTaskId(undefined);
-    setGenerating(null);
-    navigate(quizId ? `/quizzes/${quizId}` : '/quizzes/mock');
-  }, [navigate]);
+  if (!lecture) {
+    return (
+      <div className="app-container bg-white min-h-screen flex items-center justify-center">
+        <div className="text-center px-6">
+          <span className="material-symbols-outlined text-gray-300 text-[64px]">search_off</span>
+          <p className="text-gray-500 mt-2">강의를 찾을 수 없어요</p>
+          <Link to="/" className="mt-4 inline-block text-primary text-sm font-semibold">← 강의 목록으로</Link>
+        </div>
+      </div>
+    );
+  }
 
-  const masteryColor = (score: number) => {
-    if (score >= 0.7) return 'text-green-600';
-    if (score >= 0.4) return 'text-yellow-600';
-    return 'text-red-500';
-  };
-
-  const masteryBg = (score: number) => {
-    if (score >= 0.7) return 'bg-green-500';
-    if (score >= 0.4) return 'bg-yellow-500';
-    return 'bg-red-400';
-  };
+  const isGenerating = generatingQuiz || (quizTaskId !== undefined && quizStatus !== 'completed' && quizStatus !== 'failed');
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {quizTaskId && <GeneratingModal label="퀴즈" taskId={quizTaskId} onDone={handleQuizDone} />}
-      {guideTaskId && <GeneratingModal label="학습 가이드" taskId={guideTaskId} onDone={() => { setGuideTaskId(undefined); setGenerating(null); }} />}
-
+    <div className="app-container bg-bg-light min-h-screen pb-28">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-4 py-5 md:py-6">
-        <div className="max-w-3xl mx-auto">
-          <button
-            onClick={() => navigate('/')}
-            className="text-gray-400 hover:text-orange-500 text-sm mb-3 flex items-center gap-1 transition-colors"
-          >
-            ← 강의 목록
+      <div className="bg-white">
+        <div className="flex items-center gap-3 px-4 pt-12 pb-4">
+          <button onClick={() => navigate(-1)} className="p-1.5 -ml-1.5 rounded-full hover:bg-gray-50">
+            <span className="material-symbols-outlined text-gray-700 text-[22px]">arrow_back</span>
           </button>
-          {lecture && (
-            <>
-              <div className="flex flex-wrap gap-2 items-center mb-2">
-                <span className="text-xs font-semibold text-orange-500 bg-orange-50 px-2 py-0.5 rounded-full">
-                  {lecture.week}주차
-                </span>
-                <span className="text-xs text-gray-400">{lecture.date} · {lecture.instructor}</span>
+          <div className="flex-1 min-w-0">
+            <p className="text-[11px] text-gray-400 font-medium">{lecture.date} · {lecture.instructor}</p>
+            <h1 className="text-base font-bold text-gray-900 leading-snug truncate">{lecture.topic}</h1>
+          </div>
+        </div>
+
+        {/* Learning goal banner */}
+        <div className="mx-4 mb-4 bg-primary-light rounded-2xl px-4 py-3 flex items-start gap-3">
+          <span className="material-symbols-outlined text-primary text-[20px] mt-0.5 shrink-0" style={{ fontVariationSettings: "'FILL' 1" }}>target</span>
+          <div>
+            <p className="text-[10px] font-bold text-primary/70 uppercase tracking-wide mb-0.5">학습 목표</p>
+            <p className="text-xs text-primary/90 leading-relaxed">{lecture.learning_goal}</p>
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex border-b border-gray-100 px-4">
+          {(['concepts', 'quiz', 'guide'] as Tab[]).map((t) => {
+            const labels = { concepts: '핵심 개념', quiz: '퀴즈', guide: '학습 가이드' };
+            return (
+              <button
+                key={t}
+                onClick={() => setTab(t)}
+                className={`flex-1 py-3 text-sm font-semibold transition-colors relative ${
+                  tab === t ? 'text-primary' : 'text-gray-400'
+                }`}
+              >
+                {labels[t]}
+                {tab === t && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full" />}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Tab content */}
+      <div className="px-4 pt-4">
+        {tab === 'concepts' && (
+          <div className="flex flex-col gap-3">
+            {loadingConcepts ? (
+              <div className="flex justify-center py-12">
+                <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
               </div>
-              <h1 className="text-xl md:text-2xl font-bold text-gray-900">{lecture.topic}</h1>
-              <p className="text-sm text-gray-500 mt-1">{lecture.learning_goal}</p>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* CTA Buttons */}
-      <div className="bg-white border-b border-gray-100 px-4 py-3">
-        <div className="max-w-3xl mx-auto flex gap-2">
-          <button
-            onClick={handleCreateQuiz}
-            disabled={!!generating}
-            className="flex-1 md:flex-none bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300 text-white font-semibold px-4 py-2.5 rounded-lg text-sm transition-colors flex items-center justify-center gap-2"
-          >
-            <span>⚡</span>
-            {generating === 'quiz' ? '생성 중...' : '퀴즈 자동 생성'}
-          </button>
-          <button
-            onClick={handleCreateGuide}
-            disabled={!!generating}
-            className="flex-1 md:flex-none bg-white border border-orange-400 hover:bg-orange-50 disabled:bg-gray-50 text-orange-500 font-semibold px-4 py-2.5 rounded-lg text-sm transition-colors flex items-center justify-center gap-2"
-          >
-            <span>📖</span>
-            {generating === 'guide' ? '생성 중...' : '학습 가이드 생성'}
-          </button>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="bg-white border-b border-gray-200 px-4">
-        <div className="max-w-3xl mx-auto flex">
-          {(['concepts', 'quiz', 'guide'] as const).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === tab
-                  ? 'border-orange-500 text-orange-500'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              {tab === 'concepts' ? '핵심 개념' : tab === 'quiz' ? '퀴즈' : '학습 가이드'}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="max-w-3xl mx-auto px-4 py-6">
-        {activeTab === 'concepts' && (
-          <>
-            {loading ? (
-              <div className="flex justify-center py-16">
-                <div className="w-8 h-8 border-4 border-orange-400 border-t-transparent rounded-full animate-spin" />
-              </div>
+            ) : concepts.length === 0 ? (
+              <div className="text-center py-12 text-gray-400 text-sm">개념 정보가 없습니다.</div>
             ) : (
-              <div className="space-y-3">
-                {concepts.map((concept) => (
-                  <div key={concept.id} className="bg-white border border-gray-200 rounded-xl p-5">
-                    <div className="flex items-start justify-between mb-2">
-                      <h3 className="font-semibold text-gray-900">{concept.concept_name}</h3>
-                      <span className={`text-xs font-semibold ml-3 shrink-0 ${masteryColor(concept.mastery_score)}`}>
-                        숙련도 {Math.round(concept.mastery_score * 100)}%
+              concepts.map((c, i) => {
+                const mastery = MASTERY_LABEL(c.mastery_score ?? 0);
+                const pct = Math.round((c.mastery_score ?? 0) * 100);
+                return (
+                  <div key={c.id ?? i} className="bg-white rounded-2xl p-4 shadow-sm">
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <h3 className="text-sm font-bold text-gray-900">{c.concept_name}</h3>
+                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${mastery.color}`}>
+                        {mastery.label}
                       </span>
                     </div>
-                    {concept.description && (
-                      <p className="text-gray-500 text-sm leading-relaxed mb-3">{concept.description}</p>
-                    )}
-                    <div className="w-full bg-gray-100 rounded-full h-1.5">
-                      <div
-                        className={`h-1.5 rounded-full transition-all ${masteryBg(concept.mastery_score)}`}
-                        style={{ width: `${Math.max(concept.mastery_score * 100, 4)}%` }}
-                      />
+                    <p className="text-xs text-gray-500 leading-relaxed mb-3">{c.description}</p>
+                    <div>
+                      <div className="flex justify-between mb-1">
+                        <span className="text-[10px] text-gray-400">이해도</span>
+                        <span className="text-[10px] font-bold text-gray-600">{pct}%</span>
+                      </div>
+                      <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all ${pct >= 70 ? 'bg-green-500' : pct >= 40 ? 'bg-yellow-400' : 'bg-primary'}`}
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
                     </div>
                   </div>
-                ))}
-              </div>
+                );
+              })
             )}
-          </>
-        )}
-
-        {activeTab === 'quiz' && (
-          <div className="text-center py-16">
-            <p className="text-4xl mb-4">⚡</p>
-            <p className="font-semibold text-gray-700 mb-2">퀴즈를 자동 생성할 수 있어요</p>
-            <p className="text-gray-500 text-sm mb-6">AI가 강의 내용을 분석해서 퀴즈를 만들어드려요</p>
-            <button
-              onClick={handleCreateQuiz}
-              className="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-6 py-3 rounded-xl transition-colors"
-            >
-              퀴즈 생성 시작
-            </button>
           </div>
         )}
 
-        {activeTab === 'guide' && (
-          <div className="text-center py-16">
-            <p className="text-4xl mb-4">📖</p>
-            <p className="font-semibold text-gray-700 mb-2">학습 가이드를 자동 생성할 수 있어요</p>
-            <p className="text-gray-500 text-sm mb-6">핵심 요약, 개념 맵, 복습 포인트를 AI가 만들어드려요</p>
-            <button
-              onClick={handleCreateGuide}
-              className="bg-white border border-orange-400 hover:bg-orange-50 text-orange-500 font-semibold px-6 py-3 rounded-xl transition-colors"
+        {tab === 'quiz' && (
+          <div className="flex flex-col items-center py-8 gap-4">
+            <div className="w-20 h-20 bg-primary-light rounded-3xl flex items-center justify-center">
+              <span className="material-symbols-outlined text-primary text-[42px]" style={{ fontVariationSettings: "'FILL' 1" }}>quiz</span>
+            </div>
+            <div className="text-center">
+              <h3 className="text-lg font-bold text-gray-900">AI 퀴즈 생성</h3>
+              <p className="text-sm text-gray-400 mt-1 leading-relaxed">
+                강의 스크립트를 분석해<br />맞춤형 복습 퀴즈를 생성해요
+              </p>
+            </div>
+            {isGenerating ? (
+              <div className="w-full bg-white rounded-2xl p-5 text-center shadow-sm">
+                <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                <p className="text-sm font-semibold text-gray-700">퀴즈 생성 중...</p>
+                <p className="text-xs text-gray-400 mt-1">AI가 문제를 만들고 있어요</p>
+              </div>
+            ) : (
+              <>
+                <button
+                  onClick={handleGenerateQuiz}
+                  className="w-full bg-primary text-white font-bold py-4 rounded-2xl text-sm shadow-lg shadow-primary/20"
+                >
+                  퀴즈 생성하기
+                </button>
+                <Link
+                  to={`/quizzes/${id}`}
+                  className="w-full flex items-center justify-center gap-2 bg-white text-gray-600 font-medium py-3.5 rounded-2xl text-sm border border-gray-100"
+                >
+                  <span className="material-symbols-outlined text-[16px]">history</span>
+                  기존 퀴즈 풀기
+                </Link>
+              </>
+            )}
+          </div>
+        )}
+
+        {tab === 'guide' && (
+          <div className="flex flex-col items-center py-8 gap-4">
+            <div className="w-20 h-20 bg-blue-50 rounded-3xl flex items-center justify-center">
+              <span className="material-symbols-outlined text-blue-500 text-[42px]" style={{ fontVariationSettings: "'FILL' 1" }}>auto_stories</span>
+            </div>
+            <div className="text-center">
+              <h3 className="text-lg font-bold text-gray-900">AI 학습 가이드</h3>
+              <p className="text-sm text-gray-400 mt-1 leading-relaxed">
+                강의 내용을 요약하고<br />핵심 개념을 정리해드려요
+              </p>
+            </div>
+            <Link
+              to={`/lectures/${id}/guide`}
+              className="w-full bg-blue-500 text-white font-bold py-4 rounded-2xl text-sm text-center shadow-lg shadow-blue-500/20"
             >
-              학습 가이드 생성 시작
-            </button>
+              학습 가이드 보기
+            </Link>
           </div>
         )}
       </div>

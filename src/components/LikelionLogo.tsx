@@ -2,6 +2,7 @@ interface Props {
   size?: 'sm' | 'md' | 'lg';
   text?: string;
   iconOnly?: boolean;
+  maxChars?: number;
 }
 
 /**
@@ -16,7 +17,12 @@ interface Props {
  *  │         (가로 바)           │
  *  └────────────────────────────┘
  */
-export const LikelionLogo = ({ size = 'md', text = '멋사 부트캠프', iconOnly = false }: Props) => {
+export const LikelionLogo = ({
+  size = 'md',
+  text = '멋쟁이사자처럼',
+  iconOnly = false,
+  maxChars,
+}: Props) => {
   // 아이콘 기준 크기
   const BASE = 400;
   const SCALE = size === 'sm' ? 0.18 : size === 'md' ? 0.28 : 0.42;
@@ -25,7 +31,9 @@ export const LikelionLogo = ({ size = 'md', text = '멋사 부트캠프', iconOn
 
   const FONT = size === 'sm' ? 16 : size === 'md' ? 24 : 38;
   const GAP = size === 'sm' ? 8 : size === 'md' ? 12 : 16;
-  const totalW = iconOnly ? iw : iw + GAP + FONT * text.length * 0.9;
+  const charLimit = maxChars ?? (size === 'sm' ? 5 : undefined);
+  const displayText = charLimit && text.length > charLimit ? text.slice(0, charLimit) : text;
+  const totalW = iconOnly ? iw : iw + GAP + FONT * displayText.length * 0.9;
   const totalH = ih;
 
   return (
@@ -71,7 +79,7 @@ export const LikelionLogo = ({ size = 'md', text = '멋사 부트캠프', iconOn
           fill="#FF6B00"
           letterSpacing="-0.5"
         >
-          {text}
+          {displayText}
         </text>
       )}
     </svg>
