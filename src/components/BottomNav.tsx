@@ -16,22 +16,25 @@ export const BottomNav = ({ active }: { active?: string }) => {
   };
 
   return (
-    <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-app z-50 flex border-t border-slate-200 bg-bg-light/95 backdrop-blur-md px-4 pb-6 pt-2">
+    <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-app z-50 bg-white border-t border-[#E5E3DE] px-2 pb-6 pt-2 flex">
       {NAV_ITEMS.map((item) => {
         const on = resolveActive(item);
         return (
           <Link
             key={item.id}
             to={item.to}
-            className={`flex flex-1 flex-col items-center justify-center gap-1 transition-colors ${on ? 'text-primary' : 'text-slate-400'}`}
+            className={`flex flex-1 flex-col items-center justify-center gap-1 pt-1 transition-colors relative ${on ? 'text-primary' : 'text-slate-400'}`}
           >
+            {on && (
+              <span className="absolute top-0 left-1/2 -translate-x-1/2 w-5 h-0.5 bg-primary rounded-full" />
+            )}
             <span
-              className="material-symbols-outlined text-[26px]"
+              className="material-symbols-outlined text-[22px]"
               style={{ fontVariationSettings: on ? "'FILL' 1, 'wght' 500" : "'FILL' 0, 'wght' 400" }}
             >
               {item.icon}
             </span>
-            <p className="text-[10px] font-semibold leading-none">{item.label}</p>
+            <p className="text-[9px] font-semibold uppercase tracking-wide leading-none">{item.label}</p>
           </Link>
         );
       })}

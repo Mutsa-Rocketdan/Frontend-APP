@@ -59,7 +59,7 @@ export const LectureDetailPage = () => {
 
   if (!lecture) {
     return (
-      <div className="app-container bg-bg-light min-h-screen flex items-center justify-center">
+      <div className="app-container bg-white min-h-screen flex items-center justify-center">
         <div className="text-center px-6">
           <span className="material-symbols-outlined text-slate-200 text-[64px]">search_off</span>
           <p className="text-slate-500 mt-2">강의를 찾을 수 없어요</p>
@@ -70,82 +70,74 @@ export const LectureDetailPage = () => {
   }
 
   return (
-    <div className="app-container bg-bg-light min-h-screen flex flex-col">
-      {/* Sticky top nav */}
-      <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-3 bg-bg-light/80 backdrop-blur-md border-b border-primary/10">
-        <button onClick={() => navigate(-1)} className="w-11 h-11 flex items-center text-slate-800">
+    <div className="app-container bg-white min-h-screen flex flex-col">
+      {/* Top bar */}
+      <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-3 bg-white border-b border-[#E5E3DE]">
+        <button onClick={() => navigate(-1)} className="w-11 h-11 flex items-center text-[#0D0D0D]">
           <span className="material-symbols-outlined text-[22px]">arrow_back</span>
         </button>
-        <h2 className="text-base font-bold text-slate-900 flex-1 text-center">강의 상세</h2>
-        <button className="w-11 h-11 flex items-center justify-end text-slate-500">
+        <h2 className="text-sm font-bold text-[#0D0D0D] flex-1 text-center truncate px-2">강의 상세</h2>
+        <button className="w-11 h-11 flex items-center justify-end text-slate-400">
           <span className="material-symbols-outlined text-[22px]">share</span>
         </button>
       </div>
 
       <div className="flex-1 overflow-y-auto pb-32">
         {/* Video thumbnail */}
-        <div className="px-4 pt-4">
-          <div className="relative aspect-video rounded-xl overflow-hidden bg-slate-800 flex items-center justify-center">
-            <div className="absolute inset-0 bg-gradient-to-br from-slate-700 to-slate-900" />
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className="material-symbols-outlined text-slate-600 text-[72px]">
-                {lecture.subject.includes('Back') ? 'storage' : lecture.subject.includes('Front') ? 'code' : 'auto_awesome'}
-              </span>
-            </div>
-            <button className="relative w-16 h-16 bg-primary rounded-full text-white shadow-xl shadow-primary/30 flex items-center justify-center">
-              <span className="material-symbols-outlined text-[36px]" style={{ fontVariationSettings: "'FILL' 1" }}>play_arrow</span>
-            </button>
+        <div className="relative aspect-video bg-[#0D0D0D] flex items-center justify-center overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-[#0D0D0D]" />
+          <div className="absolute inset-0 flex items-center justify-center opacity-10">
+            <span className="material-symbols-outlined text-white text-[96px]">
+              {lecture.subject.includes('Back') ? 'storage' : lecture.subject.includes('Front') ? 'code' : 'auto_awesome'}
+            </span>
           </div>
+          <button className="relative w-20 h-20 bg-primary rounded-full text-white flex items-center justify-center shadow-2xl">
+            <span className="material-symbols-outlined text-[44px]" style={{ fontVariationSettings: "'FILL' 1" }}>play_arrow</span>
+          </button>
         </div>
 
         {/* Meta */}
-        <div className="px-4 pt-5">
-          <div className="flex items-center gap-2 mb-2.5">
-            <span className="px-2 py-0.5 bg-primary/10 text-primary text-[10px] font-bold rounded-md uppercase tracking-wider">
+        <div className="px-5 pt-5 pb-4 border-b border-[#E5E3DE]">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="px-2 py-0.5 bg-primary/10 text-primary text-[10px] font-bold rounded uppercase tracking-wider">
               Week {String(lecture.week).padStart(2, '0')}
             </span>
             <span className="text-slate-400 text-xs font-medium">{lecture.subject}</span>
           </div>
-          <h1 className="text-xl font-bold text-slate-900 leading-snug">{lecture.topic}</h1>
+          <h1 className="text-xl font-black text-[#0D0D0D] leading-snug">{lecture.topic}</h1>
           <p className="text-slate-500 text-sm mt-2 leading-relaxed">{lecture.learning_goal}</p>
         </div>
 
         {/* Learning goals */}
-        <div className="px-4 mt-6">
-          <h3 className="text-base font-bold text-slate-900 mb-3 flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>target</span>
-            주요 학습 목표
-          </h3>
-          <div className="space-y-2.5">
-            <div className="flex items-start gap-3 p-4 bg-white rounded-xl border border-slate-100">
-              <span className="material-symbols-outlined text-primary text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-              <p className="text-sm font-semibold text-slate-800 leading-snug">{lecture.learning_goal}</p>
+        <div className="px-5 pt-5 pb-4 border-b border-[#E5E3DE]">
+          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">주요 학습 목표</h3>
+          <div className="space-y-0">
+            <div className="flex items-start gap-3 py-3 border-b border-[#E5E3DE]">
+              <span className="material-symbols-outlined text-primary text-[18px] mt-0.5 shrink-0" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+              <p className="text-sm font-semibold text-[#0D0D0D] leading-snug">{lecture.learning_goal}</p>
             </div>
-            <div className="flex items-start gap-3 p-4 bg-white rounded-xl border border-slate-100">
-              <span className="material-symbols-outlined text-primary text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-              <p className="text-sm font-semibold text-slate-800 leading-snug">{lecture.subject} 핵심 개념 이해</p>
+            <div className="flex items-start gap-3 py-3">
+              <span className="material-symbols-outlined text-primary text-[18px] mt-0.5 shrink-0" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+              <p className="text-sm font-semibold text-[#0D0D0D] leading-snug">{lecture.subject} 핵심 개념 이해</p>
             </div>
           </div>
         </div>
 
         {/* Concepts */}
-        <div className="px-4 mt-6 mb-4">
-          <h3 className="text-base font-bold text-slate-900 mb-3 flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>lightbulb</span>
-            핵심 개념
-          </h3>
+        <div className="px-5 pt-5 pb-4">
+          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">핵심 개념</h3>
           {loadingConcepts ? (
             <div className="flex justify-center py-8">
               <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
             </div>
           ) : (
-            <div className="space-y-2.5">
+            <div className="space-y-0">
               {concepts.map((c, i) => {
                 const pct = Math.round((c.mastery_score ?? 0) * 100);
                 return (
-                  <div key={c.id ?? i} className="bg-white rounded-xl border border-slate-100 p-4">
+                  <div key={c.id ?? i} className={`py-4 ${i < concepts.length - 1 ? 'border-b border-[#E5E3DE]' : ''}`}>
                     <div className="flex items-start justify-between gap-2 mb-2">
-                      <h4 className="text-sm font-bold text-slate-900">{c.concept_name}</h4>
+                      <h4 className="text-sm font-bold text-[#0D0D0D]">{c.concept_name}</h4>
                       <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${MASTERY_COLOR(c.mastery_score ?? 0)}`}>
                         {MASTERY_LABEL(c.mastery_score ?? 0)}
                       </span>
@@ -156,7 +148,7 @@ export const LectureDetailPage = () => {
                         <span className="text-[10px] text-slate-400">이해도</span>
                         <span className="text-[10px] font-bold text-slate-600">{pct}%</span>
                       </div>
-                      <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                      <div className="h-1.5 bg-[#F5F4F1] rounded-full overflow-hidden">
                         <div className={`h-full rounded-full ${MASTERY_BAR(c.mastery_score ?? 0)}`} style={{ width: `${pct}%` }} />
                       </div>
                     </div>
@@ -169,10 +161,10 @@ export const LectureDetailPage = () => {
       </div>
 
       {/* Fixed bottom action bar */}
-      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-app px-4 py-4 bg-bg-light/90 backdrop-blur-lg border-t border-slate-200 flex gap-3">
+      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-app px-4 py-4 bg-white border-t border-[#E5E3DE] flex gap-3">
         <button
           onClick={() => navigate(`/lectures/${id}/guide`)}
-          className="flex-1 h-14 border-2 border-primary text-primary rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-primary/5 transition-all"
+          className="flex-1 h-14 border border-primary text-primary rounded-lg font-bold flex items-center justify-center gap-2 hover:bg-primary/5 transition-all"
         >
           <span className="material-symbols-outlined text-[20px]">menu_book</span>
           학습 가이드
@@ -180,7 +172,7 @@ export const LectureDetailPage = () => {
         <button
           onClick={isGenerating ? undefined : handleGenerateQuiz}
           disabled={isGenerating}
-          className="flex-[1.5] h-14 bg-primary text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-xl shadow-primary/25 hover:bg-primary-dark transition-all disabled:opacity-60"
+          className="flex-[1.5] h-14 bg-[#FF6A00] text-white rounded-lg font-bold flex items-center justify-center gap-2 hover:bg-primary-dark transition-all disabled:opacity-60"
         >
           {isGenerating ? (
             <>

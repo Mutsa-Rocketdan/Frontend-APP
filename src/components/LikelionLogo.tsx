@@ -3,6 +3,7 @@ interface Props {
   text?: string;
   iconOnly?: boolean;
   maxChars?: number;
+  className?: string;
 }
 
 /**
@@ -22,6 +23,7 @@ export const LikelionLogo = ({
   text = '멋쟁이사자처럼',
   iconOnly = false,
   maxChars,
+  className,
 }: Props) => {
   // 아이콘 기준 크기
   const BASE = 400;
@@ -44,6 +46,7 @@ export const LikelionLogo = ({
       height={totalH}
       role="img"
       aria-label={text}
+      className={className}
     >
       {/* 아이콘 (멋쟁이사자처럼 스타일) */}
       <g transform={`scale(${SCALE})`}>

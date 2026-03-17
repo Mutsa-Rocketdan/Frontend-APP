@@ -95,84 +95,74 @@ export const QuizPage = () => {
   const progress = ((currentIdx + (showExplanation ? 1 : 0)) / total) * 100;
 
   return (
-    <div className="app-container bg-bg-light min-h-screen flex flex-col">
-      {/* Top bar */}
-      <div className="flex items-center justify-between px-4 pt-12 pb-3 bg-bg-light">
-        <button onClick={() => navigate(-1)} className="w-11 h-11 flex items-center text-slate-500">
+    <div className="app-container bg-white min-h-screen flex flex-col">
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 pt-12 pb-3 bg-white border-b border-[#E5E3DE]">
+        <button onClick={() => navigate(-1)} className="w-11 h-11 flex items-center text-slate-400">
           <span className="material-symbols-outlined text-[22px]">close</span>
         </button>
-        <h2 className="text-base font-bold text-slate-900 flex-1 text-center truncate px-2">멋쟁이사자처럼</h2>
-        <div className="w-11" />
-      </div>
-
-      {/* Progress */}
-      <div className="px-4 pb-4 space-y-2">
-        <div className="flex justify-between items-end">
-          <div>
-            <span className="text-slate-400 text-xs font-semibold uppercase tracking-wide">Progress</span>
-            <p className="text-xl font-bold text-slate-900">
-              {String(currentIdx + 1).padStart(2, '0')}{' '}
-              <span className="text-slate-300 font-normal">/ {String(total).padStart(2, '0')}</span>
-            </p>
-          </div>
-          <p className="text-primary text-sm font-bold">{Math.round(((currentIdx + 1) / total) * 100)}% 완료</p>
-        </div>
-        <div className="h-2.5 w-full rounded-full bg-slate-100 overflow-hidden">
-          <div
-            className="h-full bg-primary rounded-full transition-all duration-500"
-            style={{ width: `${progress}%` }}
-          />
+        <h2 className="text-sm font-bold text-[#0D0D0D] flex-1 text-center truncate px-2">멋쟁이사자처럼</h2>
+        <div className="w-11 text-right">
+          <span className="text-xs font-semibold text-slate-400">{currentIdx + 1}/{total}</span>
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col px-4 pb-4 gap-3 overflow-y-auto">
+      {/* Progress bar - full width, no padding */}
+      <div className="h-1 w-full bg-[#F5F4F1]">
+        <div
+          className="h-full bg-primary transition-all duration-500"
+          style={{ width: `${progress}%` }}
+        />
+      </div>
+
+      <div className="flex-1 flex flex-col px-5 pb-4 overflow-y-auto">
         {/* Question */}
-        <div className="pt-6 pb-4">
-          <span className="text-primary font-bold text-sm">질문 {String(currentIdx + 1).padStart(2, '0')}</span>
-          <h3 className="text-xl font-bold text-slate-900 mt-1.5 leading-snug">{question.question_text}</h3>
+        <div className="pt-7 pb-5">
+          <span className="text-primary font-black text-sm">Q{currentIdx + 1}</span>
+          <h3 className="text-xl font-black text-[#0D0D0D] mt-2 leading-snug">{question.question_text}</h3>
         </div>
 
         {/* Options */}
         <div className="flex flex-col gap-3 flex-1">
           {question.options.map((opt, i) => {
-            let border = 'border-slate-100';
-            let bg = '';
-            let text = 'text-slate-700';
+            let borderClass = 'border-slate-200';
+            let bgClass = 'bg-white';
+            let textClass = 'text-slate-700';
             let radioFill = false;
 
             if (showExplanation) {
               if (opt === question.correct_answer) {
-                border = 'border-emerald-400'; bg = 'bg-emerald-50'; text = 'text-emerald-700';
+                borderClass = 'border-emerald-400'; bgClass = 'bg-emerald-50'; textClass = 'text-emerald-700';
               } else if (opt === selected) {
-                border = 'border-red-300'; bg = 'bg-red-50'; text = 'text-red-600';
+                borderClass = 'border-red-300'; bgClass = 'bg-red-50'; textClass = 'text-red-600';
               } else {
-                border = 'border-slate-100'; text = 'text-slate-300';
+                borderClass = 'border-slate-200'; textClass = 'text-slate-300';
               }
             } else if (opt === selected) {
-              border = 'border-primary'; bg = 'bg-primary/5'; text = 'text-primary'; radioFill = true;
+              borderClass = 'border-[#FF6A00]'; bgClass = 'bg-orange-50'; textClass = 'text-[#FF6A00]'; radioFill = true;
             }
 
             return (
               <div
                 key={i}
                 onClick={() => handleSelect(opt)}
-                className={`flex items-center justify-between p-5 rounded-xl border-2 transition-all cursor-pointer bg-white ${border} ${bg}`}
+                className={`flex items-center justify-between px-4 py-4 rounded-lg border transition-all cursor-pointer ${borderClass} ${bgClass}`}
               >
-                <p className={`text-sm font-semibold leading-snug flex-1 ${text}`}>{opt}</p>
-                <div className={`ml-3 w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
-                  radioFill ? 'border-primary' :
+                <p className={`text-sm font-semibold leading-snug flex-1 ${textClass}`}>{opt}</p>
+                <div className={`ml-3 w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
+                  radioFill ? 'border-[#FF6A00]' :
                   showExplanation && opt === question.correct_answer ? 'border-emerald-500' :
                   showExplanation && opt === selected ? 'border-red-400' :
                   'border-slate-200'
                 }`}>
                   {showExplanation && opt === question.correct_answer && (
-                    <span className="material-symbols-outlined text-emerald-500 text-[14px]" style={{ fontVariationSettings: "'FILL' 1" }}>check</span>
+                    <span className="material-symbols-outlined text-emerald-500 text-[12px]" style={{ fontVariationSettings: "'FILL' 1" }}>check</span>
                   )}
                   {showExplanation && opt === selected && opt !== question.correct_answer && (
-                    <span className="material-symbols-outlined text-red-400 text-[14px]" style={{ fontVariationSettings: "'FILL' 1" }}>close</span>
+                    <span className="material-symbols-outlined text-red-400 text-[12px]" style={{ fontVariationSettings: "'FILL' 1" }}>close</span>
                   )}
                   {radioFill && !showExplanation && (
-                    <div className="w-3 h-3 rounded-full bg-primary" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-[#FF6A00]" />
                   )}
                 </div>
               </div>
@@ -182,9 +172,9 @@ export const QuizPage = () => {
 
         {/* Explanation */}
         {showExplanation && (
-          <div className={`rounded-xl p-4 ${isCorrect ? 'bg-emerald-50 border border-emerald-200' : 'bg-red-50 border border-red-200'}`}>
+          <div className={`mt-4 rounded-lg p-4 ${isCorrect ? 'bg-emerald-50 border border-emerald-200' : 'bg-red-50 border border-red-200'}`}>
             <p className={`font-bold text-sm mb-1 ${isCorrect ? 'text-emerald-700' : 'text-red-600'}`}>
-              {isCorrect ? '✓ 정답!' : '✗ 오답'}
+              {isCorrect ? '정답!' : '오답'}
             </p>
             {!isCorrect && (
               <p className="text-slate-700 text-xs mb-1.5">
@@ -198,13 +188,13 @@ export const QuizPage = () => {
         )}
       </div>
 
-      {/* Bottom next button */}
-      <div className="px-4 py-4 bg-white/80 backdrop-blur-md border-t border-slate-100 sticky bottom-0">
+      {/* Sticky bottom button */}
+      <div className="sticky bottom-0 px-5 py-4 bg-white border-t border-[#E5E3DE]">
         {showExplanation ? (
           <button
             onClick={handleNext}
             disabled={submitting}
-            className="w-full h-14 bg-primary text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-xl shadow-primary/20 disabled:opacity-60 transition-all"
+            className="w-full h-14 bg-[#FF6A00] text-white rounded-lg font-bold flex items-center justify-center gap-2 disabled:opacity-60 transition-all"
           >
             {submitting ? '제출 중...' : isLast ? '결과 보기' : '다음으로'}
             {!submitting && <span className="material-symbols-outlined text-[20px]">arrow_forward</span>}

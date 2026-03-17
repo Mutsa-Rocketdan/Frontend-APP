@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { register } from '../api/auth';
+import { LikelionLogo } from '../components/LikelionLogo';
 
 export const RegisterPage = () => {
   const [name, setName] = useState('');
@@ -29,56 +30,54 @@ export const RegisterPage = () => {
   };
 
   return (
-    <div className="app-container bg-bg-light min-h-screen flex flex-col">
+    <div className="app-container bg-white min-h-screen flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between px-4 pt-12 pb-2">
         <button
           onClick={() => navigate(-1)}
-          className="w-11 h-11 flex items-center justify-start text-slate-800"
+          className="w-11 h-11 flex items-center justify-start text-[#0D0D0D]"
         >
           <span className="material-symbols-outlined text-[24px]">arrow_back</span>
         </button>
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 bg-primary rounded-lg flex items-center justify-center">
-            <span className="material-symbols-outlined text-white text-[16px]" style={{ fontVariationSettings: "'FILL' 1" }}>school</span>
-          </div>
-          <span className="font-bold text-base tracking-tight text-slate-900">LIKE LION</span>
+          <LikelionLogo size="sm" iconOnly className="h-7 w-auto" />
+          <span className="font-bold text-base tracking-tight text-[#0D0D0D]">LIKELION</span>
         </div>
         <div className="w-11" />
       </div>
 
       {/* Heading */}
       <div className="px-6 pt-8 pb-4">
-        <h1 className="text-[32px] font-bold tracking-tight text-slate-900 leading-tight">새로운 학습의 시작</h1>
-        <p className="text-slate-500 text-base mt-2">멋쟁이사자처럼에서 성장을 시작하세요.</p>
+        <h1 className="text-[32px] font-black tracking-tight text-[#0D0D0D] leading-tight">새로운 학습의 시작</h1>
+        <p className="text-slate-400 text-base mt-2">멋쟁이사자처럼에서 성장을 시작하세요.</p>
       </div>
 
       {/* Form */}
       <form onSubmit={handleSubmit} className="flex flex-col flex-1 px-6 gap-4 pb-8">
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <label className="block text-sm font-semibold text-slate-700 ml-0.5">이름</label>
+            <label className="block text-sm font-semibold text-[#0D0D0D]">이름</label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="성함을 입력해주세요"
-              className="w-full rounded-xl border-2 border-slate-200 bg-white h-14 px-4 text-slate-900 placeholder:text-slate-300 focus:border-primary outline-none transition-all"
+              className="w-full rounded-lg border border-slate-300 bg-white h-14 px-4 text-slate-900 placeholder:text-slate-300 focus:border-[#FF6A00] outline-none transition-all"
             />
           </div>
           <div className="space-y-1.5">
-            <label className="block text-sm font-semibold text-slate-700 ml-0.5">이메일 *</label>
+            <label className="block text-sm font-semibold text-[#0D0D0D]">이메일 *</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
               placeholder="example@likelion.net"
-              className="w-full rounded-xl border-2 border-slate-200 bg-white h-14 px-4 text-slate-900 placeholder:text-slate-300 focus:border-primary outline-none transition-all"
+              className="w-full rounded-lg border border-slate-300 bg-white h-14 px-4 text-slate-900 placeholder:text-slate-300 focus:border-[#FF6A00] outline-none transition-all"
             />
           </div>
           <div className="space-y-1.5">
-            <label className="block text-sm font-semibold text-slate-700 ml-0.5">비밀번호 *</label>
+            <label className="block text-sm font-semibold text-[#0D0D0D]">비밀번호 *</label>
             <div className="relative">
               <input
                 type={showPw ? 'text' : 'password'}
@@ -87,7 +86,7 @@ export const RegisterPage = () => {
                 required
                 minLength={8}
                 placeholder="8자 이상의 영문, 숫자 조합"
-                className="w-full rounded-xl border-2 border-slate-200 bg-white h-14 px-4 pr-12 text-slate-900 placeholder:text-slate-300 focus:border-primary outline-none transition-all"
+                className="w-full rounded-lg border border-slate-300 bg-white h-14 px-4 pr-12 text-slate-900 placeholder:text-slate-300 focus:border-[#FF6A00] outline-none transition-all"
               />
               <button
                 type="button"
@@ -129,7 +128,7 @@ export const RegisterPage = () => {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-primary hover:bg-primary-dark disabled:opacity-60 text-white font-bold py-4 rounded-xl text-base transition-all active:scale-[0.98]"
+          className="w-full bg-[#FF6A00] hover:bg-primary-dark disabled:opacity-60 text-white font-bold py-4 rounded-lg text-base transition-all active:scale-[0.98]"
         >
           {loading ? '처리 중...' : '무료로 시작하기'}
         </button>
