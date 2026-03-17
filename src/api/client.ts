@@ -1,6 +1,8 @@
 import axios from 'axios';
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+// 개발: Vite 프록시(/api → localhost:8000)로 CORS 우회
+// 프로덕션: VITE_API_URL 환경변수로 직접 지정
+const BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 export const apiClient = axios.create({
   baseURL: BASE_URL,
