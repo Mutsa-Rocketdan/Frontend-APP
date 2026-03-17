@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { login as loginApi } from '../api/auth';
 import { useAuth } from '../contexts/AuthContext';
+import { LikelionLogo } from '../components/LikelionLogo';
 
 export const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -35,16 +36,9 @@ export const LoginPage = () => {
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4">
       <div className="w-full max-w-sm">
         {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-2 mb-3">
-            <svg width="36" height="32" viewBox="0 0 36 32" fill="none">
-              <rect x="0" y="0" width="10" height="32" fill="#FF6B00" />
-              <rect x="0" y="23" width="36" height="9" fill="#FF6B00" />
-              <rect x="26" y="0" width="10" height="14" fill="#FF6B00" />
-            </svg>
-            <span className="font-black text-2xl text-[#FF6B00] tracking-tight">AI Quiz</span>
-          </div>
-          <p className="text-gray-500 text-sm">강의 기반 맞춤형 퀴즈 & 학습 가이드</p>
+        <div className="flex flex-col items-center mb-8">
+          <LikelionLogo size="md" text="멋사 부트캠프" />
+          <p className="text-gray-500 text-sm mt-2">AI 복습 퀴즈 & 학습 가이드</p>
         </div>
 
         <div className="bg-white border border-gray-200 rounded-2xl p-6 md:p-8 shadow-sm">
