@@ -4,29 +4,34 @@ import { getConcepts } from '../api/lectures';
 import { createQuiz } from '../api/quizzes';
 import { useTaskPoller } from '../hooks/useTaskPoller';
 import { ProgressBar } from '../components/ProgressBar';
+import { getLectureById } from '../data/curriculum';
 import type { ConceptResponse } from '../types';
 
-const QuizGeneratingModal = ({ taskId, onDone }: { taskId: string; onDone: (quizId: string) => void }) => {
-  const task = useTaskPoller(taskId);
+// 백엔드 없을 때 보여줄 mock 개념
+const MOCK_CONCEPTS: ConceptResponse[] = [
+  { id: 1, lecture_id: 'mock', concept_name: '데코레이터 패턴', description: '기존 객체에 새로운 기능을 동적으로 추가하는 구조적 디자인 패턴. 상속 대신 합성을 사용한다.', mastery_score: 0.3 },
+  { id: 2, lecture_id: 'mock', concept_name: '옵저버 패턴', description: '한 객체의 상태 변화를 다른 객체들에게 자동으로 알리는 행동 패턴. 이벤트 기반 시스템에 활용된다.', mastery_score: 0.6 },
+  { id: 3, lecture_id: 'mock', concept_name: '파사드 패턴', description: '복잡한 서브시스템을 단순한 인터페이스로 감싸는 구조적 패턴. 클라이언트와 시스템 간 결합도를 낮춘다.', mastery_score: 0.0 },
+];
 
+const GeneratingModal = ({ label, taskId, onDone }: { label: string; taskId: string; onDone: (id?: string) => void }) => {
+  const task = useTaskPoller(taskId);
   useEffect(() => {
-    // task 완료 시 quiz_id 추출 (result_url 또는 별도 방법으로)
     if (task?.status === 'completed') {
-      // result_url에서 quiz id 파싱 시도, 없으면 목록으로
-      const quizId = task.result_url?.split('/').pop();
-      setTimeout(() => onDone(quizId || ''), 800);
+      const resultId = task.result_url?.split('/').pop();
+      setTimeout(() => onDone(resultId), 800);
     }
   }, [task?.status, task?.result_url, onDone]);
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-      <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-8 w-full max-w-sm text-center">
-        <div className="w-12 h-12 border-2 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-        <p className="text-white font-semibold mb-1">AI가 퀴즈를 생성하고 있어요</p>
-        <p className="text-zinc-400 text-sm mb-6">잠시만 기다려주세요...</p>
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4">
+      <div className="bg-white rounded-2xl p-8 w-full max-w-sm text-center shadow-xl">
+        <div className="w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+        <p className="font-semibold text-gray-900 mb-1">AI가 {label}을 생성하고 있어요</p>
+        <p className="text-gray-500 text-sm mb-6">잠시만 기다려주세요...</p>
         <ProgressBar progress={task?.progress ?? 0} />
         {task?.status === 'failed' && (
-          <p className="text-red-400 text-sm mt-4">퀴즈 생성 중 오류가 발생했습니다.</p>
+          <p className="text-red-500 text-sm mt-4">생성 중 오류가 발생했습니다.</p>
         )}
       </div>
     </div>
@@ -37,104 +42,201 @@ export const LectureDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const [concepts, setConcepts] = useState<ConceptResponse[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'concepts' | 'quiz' | 'guide'>('concepts');
   const [quizTaskId, setQuizTaskId] = useState<string | undefined>();
-  const [generatingQuiz, setGeneratingQuiz] = useState(false);
+  const [guideTaskId, setGuideTaskId] = useState<string | undefined>();
+  const [generating, setGenerating] = useState<'quiz' | 'guide' | null>(null);
   const navigate = useNavigate();
+
+  const lecture = getLectureById(id ?? '');
 
   useEffect(() => {
     if (!id) return;
+    // 백엔드 없으면 mock 데이터로 폴백
     getConcepts(id)
       .then((res) => setConcepts(res.data))
+      .catch(() => setConcepts(MOCK_CONCEPTS))
       .finally(() => setLoading(false));
   }, [id]);
 
   const handleCreateQuiz = async () => {
-    if (!id || generatingQuiz) return;
-    setGeneratingQuiz(true);
+    if (!id || generating) return;
+    setGenerating('quiz');
     try {
       const res = await createQuiz(id);
       if (res.data.task_id) {
         setQuizTaskId(res.data.task_id);
-      } else if (res.data.id) {
+      } else {
         navigate(`/quizzes/${res.data.id}`);
       }
     } catch {
-      setGeneratingQuiz(false);
+      // 백엔드 없으면 mock quiz로 이동
+      navigate('/quizzes/mock');
+      setGenerating(null);
     }
   };
 
-  const handleQuizDone = useCallback((quizId: string) => {
+  const handleCreateGuide = async () => {
+    if (!id || generating) return;
+    setGenerating('guide');
+    try {
+      // TODO: 학습가이드 생성 API 연동 (성진님 추가 예정)
+      // 임시로 mock guide 페이지로 이동
+      navigate(`/lectures/${id}/guide`);
+    } catch {
+      navigate(`/lectures/${id}/guide`);
+    } finally {
+      setGenerating(null);
+    }
+  };
+
+  const handleQuizDone = useCallback((quizId?: string) => {
     setQuizTaskId(undefined);
-    setGeneratingQuiz(false);
-    if (quizId) navigate(`/quizzes/${quizId}`);
-    else navigate('/lectures');
+    setGenerating(null);
+    navigate(quizId ? `/quizzes/${quizId}` : '/quizzes/mock');
   }, [navigate]);
 
   const masteryColor = (score: number) => {
-    if (score >= 0.7) return 'text-green-400';
-    if (score >= 0.4) return 'text-yellow-400';
-    return 'text-red-400';
+    if (score >= 0.7) return 'text-green-600';
+    if (score >= 0.4) return 'text-yellow-600';
+    return 'text-red-500';
+  };
+
+  const masteryBg = (score: number) => {
+    if (score >= 0.7) return 'bg-green-500';
+    if (score >= 0.4) return 'bg-yellow-500';
+    return 'bg-red-400';
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950">
-      {quizTaskId && <QuizGeneratingModal taskId={quizTaskId} onDone={handleQuizDone} />}
+    <div className="min-h-screen bg-gray-50">
+      {quizTaskId && <GeneratingModal label="퀴즈" taskId={quizTaskId} onDone={handleQuizDone} />}
+      {guideTaskId && <GeneratingModal label="학습 가이드" taskId={guideTaskId} onDone={() => { setGuideTaskId(undefined); setGenerating(null); }} />}
 
-      <div className="max-w-4xl mx-auto px-6 py-10">
-        <button
-          onClick={() => navigate('/lectures')}
-          className="text-zinc-500 hover:text-orange-500 text-sm mb-6 flex items-center gap-1 transition-colors"
-        >
-          ← 강의 목록으로
-        </button>
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200 px-4 py-5 md:py-6">
+        <div className="max-w-3xl mx-auto">
+          <button
+            onClick={() => navigate('/')}
+            className="text-gray-400 hover:text-orange-500 text-sm mb-3 flex items-center gap-1 transition-colors"
+          >
+            ← 강의 목록
+          </button>
+          {lecture && (
+            <>
+              <div className="flex flex-wrap gap-2 items-center mb-2">
+                <span className="text-xs font-semibold text-orange-500 bg-orange-50 px-2 py-0.5 rounded-full">
+                  {lecture.week}주차
+                </span>
+                <span className="text-xs text-gray-400">{lecture.date} · {lecture.instructor}</span>
+              </div>
+              <h1 className="text-xl md:text-2xl font-bold text-gray-900">{lecture.topic}</h1>
+              <p className="text-sm text-gray-500 mt-1">{lecture.learning_goal}</p>
+            </>
+          )}
+        </div>
+      </div>
 
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-white text-2xl font-bold">핵심 개념</h1>
-            <p className="text-zinc-500 text-sm mt-1">AI가 추출한 강의 핵심 개념들이에요</p>
-          </div>
+      {/* CTA Buttons */}
+      <div className="bg-white border-b border-gray-100 px-4 py-3">
+        <div className="max-w-3xl mx-auto flex gap-2">
           <button
             onClick={handleCreateQuiz}
-            disabled={generatingQuiz || concepts.length === 0}
-            className="bg-orange-500 hover:bg-orange-600 disabled:bg-zinc-700 disabled:text-zinc-500 text-white font-semibold px-5 py-2.5 rounded-lg text-sm transition-colors"
+            disabled={!!generating}
+            className="flex-1 md:flex-none bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300 text-white font-semibold px-4 py-2.5 rounded-lg text-sm transition-colors flex items-center justify-center gap-2"
           >
-            {generatingQuiz ? '생성 중...' : '퀴즈 생성'}
+            <span>⚡</span>
+            {generating === 'quiz' ? '생성 중...' : '퀴즈 자동 생성'}
+          </button>
+          <button
+            onClick={handleCreateGuide}
+            disabled={!!generating}
+            className="flex-1 md:flex-none bg-white border border-orange-400 hover:bg-orange-50 disabled:bg-gray-50 text-orange-500 font-semibold px-4 py-2.5 rounded-lg text-sm transition-colors flex items-center justify-center gap-2"
+          >
+            <span>📖</span>
+            {generating === 'guide' ? '생성 중...' : '학습 가이드 생성'}
           </button>
         </div>
+      </div>
 
-        {loading ? (
-          <div className="flex justify-center py-20">
-            <div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
-          </div>
-        ) : concepts.length === 0 ? (
-          <div className="text-center py-20">
-            <p className="text-4xl mb-4">🔍</p>
-            <p className="text-zinc-400">아직 추출된 개념이 없어요</p>
-            <p className="text-zinc-600 text-sm mt-1">AI 분석이 완료되면 개념이 표시됩니다</p>
-          </div>
-        ) : (
-          <div className="grid gap-4">
-            {concepts.map((concept) => (
-              <div key={concept.id} className="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
-                <div className="flex items-start justify-between mb-3">
-                  <h3 className="text-orange-500 font-semibold">{concept.concept_name}</h3>
-                  <span className={`text-sm font-medium ${masteryColor(concept.mastery_score)}`}>
-                    숙련도 {Math.round(concept.mastery_score * 100)}%
-                  </span>
-                </div>
-                {concept.description && (
-                  <p className="text-zinc-400 text-sm leading-relaxed">{concept.description}</p>
-                )}
-                <div className="mt-3">
-                  <div className="w-full bg-zinc-800 rounded-full h-1.5">
-                    <div
-                      className="bg-orange-500 h-1.5 rounded-full transition-all"
-                      style={{ width: `${concept.mastery_score * 100}%` }}
-                    />
-                  </div>
-                </div>
+      {/* Tabs */}
+      <div className="bg-white border-b border-gray-200 px-4">
+        <div className="max-w-3xl mx-auto flex">
+          {(['concepts', 'quiz', 'guide'] as const).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === tab
+                  ? 'border-orange-500 text-orange-500'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              {tab === 'concepts' ? '핵심 개념' : tab === 'quiz' ? '퀴즈' : '학습 가이드'}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="max-w-3xl mx-auto px-4 py-6">
+        {activeTab === 'concepts' && (
+          <>
+            {loading ? (
+              <div className="flex justify-center py-16">
+                <div className="w-8 h-8 border-4 border-orange-400 border-t-transparent rounded-full animate-spin" />
               </div>
-            ))}
+            ) : (
+              <div className="space-y-3">
+                {concepts.map((concept) => (
+                  <div key={concept.id} className="bg-white border border-gray-200 rounded-xl p-5">
+                    <div className="flex items-start justify-between mb-2">
+                      <h3 className="font-semibold text-gray-900">{concept.concept_name}</h3>
+                      <span className={`text-xs font-semibold ml-3 shrink-0 ${masteryColor(concept.mastery_score)}`}>
+                        숙련도 {Math.round(concept.mastery_score * 100)}%
+                      </span>
+                    </div>
+                    {concept.description && (
+                      <p className="text-gray-500 text-sm leading-relaxed mb-3">{concept.description}</p>
+                    )}
+                    <div className="w-full bg-gray-100 rounded-full h-1.5">
+                      <div
+                        className={`h-1.5 rounded-full transition-all ${masteryBg(concept.mastery_score)}`}
+                        style={{ width: `${Math.max(concept.mastery_score * 100, 4)}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
+        {activeTab === 'quiz' && (
+          <div className="text-center py-16">
+            <p className="text-4xl mb-4">⚡</p>
+            <p className="font-semibold text-gray-700 mb-2">퀴즈를 자동 생성할 수 있어요</p>
+            <p className="text-gray-500 text-sm mb-6">AI가 강의 내용을 분석해서 퀴즈를 만들어드려요</p>
+            <button
+              onClick={handleCreateQuiz}
+              className="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-6 py-3 rounded-xl transition-colors"
+            >
+              퀴즈 생성 시작
+            </button>
+          </div>
+        )}
+
+        {activeTab === 'guide' && (
+          <div className="text-center py-16">
+            <p className="text-4xl mb-4">📖</p>
+            <p className="font-semibold text-gray-700 mb-2">학습 가이드를 자동 생성할 수 있어요</p>
+            <p className="text-gray-500 text-sm mb-6">핵심 요약, 개념 맵, 복습 포인트를 AI가 만들어드려요</p>
+            <button
+              onClick={handleCreateGuide}
+              className="bg-white border border-orange-400 hover:bg-orange-50 text-orange-500 font-semibold px-6 py-3 rounded-xl transition-colors"
+            >
+              학습 가이드 생성 시작
+            </button>
           </div>
         )}
       </div>

@@ -1,6 +1,17 @@
-// TODO: 백엔드 연결 후 아래 임시 우회 제거하고 원래 인증 로직 복원
+import { Navigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import type { ReactNode } from 'react';
 
 export const ProtectedRoute = ({ children }: { children: ReactNode }) => {
-  return <>{children}</>;
+  const { token, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-[#FF6B00] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  return token ? <>{children}</> : <Navigate to="/login" replace />;
 };

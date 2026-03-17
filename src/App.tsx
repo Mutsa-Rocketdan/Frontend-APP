@@ -8,6 +8,7 @@ import { LecturesPage } from './pages/LecturesPage';
 import { LectureDetailPage } from './pages/LectureDetailPage';
 import { QuizPage } from './pages/QuizPage';
 import { QuizResultsPage } from './pages/QuizResultsPage';
+import { StudyGuidePage } from './pages/StudyGuidePage';
 
 const Layout = ({ children }: { children: React.ReactNode }) => (
   <>
@@ -23,7 +24,7 @@ function App() {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
-          <Route path="/lectures" element={
+          <Route path="/" element={
             <ProtectedRoute>
               <Layout><LecturesPage /></Layout>
             </ProtectedRoute>
@@ -31,6 +32,11 @@ function App() {
           <Route path="/lectures/:id" element={
             <ProtectedRoute>
               <Layout><LectureDetailPage /></Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/lectures/:id/guide" element={
+            <ProtectedRoute>
+              <Layout><StudyGuidePage /></Layout>
             </ProtectedRoute>
           } />
           <Route path="/quizzes/:id" element={
@@ -43,7 +49,7 @@ function App() {
               <Layout><QuizResultsPage /></Layout>
             </ProtectedRoute>
           } />
-          <Route path="*" element={<Navigate to="/lectures" replace />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

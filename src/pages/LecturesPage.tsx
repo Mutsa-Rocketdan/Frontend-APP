@@ -1,177 +1,79 @@
-import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getLectures, createLecture } from '../api/lectures';
-import { useTaskPoller } from '../hooks/useTaskPoller';
-import { ProgressBar } from '../components/ProgressBar';
-import type { LectureResponse } from '../types';
-
-const TaskProgressModal = ({ taskId, onDone }: { taskId: string; onDone: () => void }) => {
-  const task = useTaskPoller(taskId);
-
-  useEffect(() => {
-    if (task?.status === 'completed') {
-      setTimeout(onDone, 800);
-    }
-  }, [task?.status, onDone]);
-
-  return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-      <div className="bg-zinc-900 border border-zinc-700 rounded-2xl p-8 w-full max-w-sm text-center">
-        <div className="w-12 h-12 border-2 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-        <p className="text-white font-semibold mb-1">AI가 개념을 추출하고 있어요</p>
-        <p className="text-zinc-400 text-sm mb-6">잠시만 기다려주세요...</p>
-        <ProgressBar progress={task?.progress ?? 0} />
-        {task?.status === 'failed' && (
-          <p className="text-red-400 text-sm mt-4">처리 중 오류가 발생했습니다.</p>
-        )}
-      </div>
-    </div>
-  );
-};
-
-const CreateLectureModal = ({ onClose, onCreated }: { onClose: () => void; onCreated: (taskId: string) => void }) => {
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
-  const [loading, setLoading] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      const res = await createLecture({ title, content });
-      if (res.data.task_id) {
-        onCreated(res.data.task_id);
-      } else {
-        onClose();
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-4">
-      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 w-full max-w-lg">
-        <h3 className="text-white text-lg font-semibold mb-6">강의 자료 등록</h3>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-zinc-400 text-sm mb-2">강의 제목</label>
-            <input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              required
-              placeholder="예: 1주차 - 자연어처리 기초"
-              className="w-full bg-zinc-800 border border-zinc-700 focus:border-orange-500 text-white rounded-lg px-4 py-3 text-sm outline-none transition-colors"
-            />
-          </div>
-          <div>
-            <label className="block text-zinc-400 text-sm mb-2">강의 내용 (스크립트)</label>
-            <textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              required
-              rows={8}
-              placeholder="강의 스크립트를 붙여넣으세요..."
-              className="w-full bg-zinc-800 border border-zinc-700 focus:border-orange-500 text-white rounded-lg px-4 py-3 text-sm outline-none transition-colors resize-none"
-            />
-          </div>
-          <div className="flex gap-3 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 border border-zinc-700 text-zinc-300 hover:border-zinc-500 py-3 rounded-lg text-sm transition-colors"
-            >
-              취소
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex-1 bg-orange-500 hover:bg-orange-600 disabled:bg-orange-500/50 text-white font-semibold py-3 rounded-lg text-sm transition-colors"
-            >
-              {loading ? '업로드 중...' : 'AI 분석 시작'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-};
+import { LECTURES, WEEKS, getSubjectStyle } from '../data/curriculum';
 
 export const LecturesPage = () => {
-  const [lectures, setLectures] = useState<LectureResponse[]>([]);
-  const [showCreate, setShowCreate] = useState(false);
-  const [pollingTaskId, setPollingTaskId] = useState<string | undefined>();
   const navigate = useNavigate();
 
-  const fetchLectures = async () => {
-    const res = await getLectures();
-    setLectures(res.data);
-  };
-
-  useEffect(() => { fetchLectures(); }, []);
-
-  const handleCreated = (taskId: string) => {
-    setShowCreate(false);
-    setPollingTaskId(taskId);
-  };
-
-  const handlePollDone = () => {
-    setPollingTaskId(undefined);
-    fetchLectures();
-  };
-
   return (
-    <div className="min-h-screen bg-zinc-950">
-      {showCreate && (
-        <CreateLectureModal onClose={() => setShowCreate(false)} onCreated={handleCreated} />
-      )}
-      {pollingTaskId && (
-        <TaskProgressModal taskId={pollingTaskId} onDone={handlePollDone} />
-      )}
-
-      <div className="max-w-4xl mx-auto px-6 py-10">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-white text-2xl font-bold">내 강의 목록</h1>
-            <p className="text-zinc-500 text-sm mt-1">강의 자료를 업로드하고 AI로 퀴즈를 생성하세요</p>
-          </div>
-          <button
-            onClick={() => setShowCreate(true)}
-            className="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-5 py-2.5 rounded-lg text-sm transition-colors"
-          >
-            + 강의 등록
-          </button>
+    <div className="min-h-screen bg-gray-50">
+      {/* Hero */}
+      <div className="bg-white border-b border-gray-200 px-4 py-8 md:py-12">
+        <div className="max-w-4xl mx-auto">
+          <p className="text-orange-500 text-sm font-semibold mb-2">KDT Backend 21기</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+            AI 복습 퀴즈 & 학습 가이드
+          </h1>
+          <p className="text-gray-500 text-sm md:text-base">
+            강의를 선택하면 AI가 핵심 개념 추출 · 퀴즈 · 학습 가이드를 자동으로 생성합니다
+          </p>
         </div>
+      </div>
 
-        {lectures.length === 0 ? (
-          <div className="text-center py-20">
-            <p className="text-4xl mb-4">📚</p>
-            <p className="text-zinc-400">아직 등록된 강의가 없어요</p>
-            <p className="text-zinc-600 text-sm mt-1">강의 자료를 업로드하면 AI가 자동으로 분석해요</p>
-          </div>
-        ) : (
-          <div className="grid gap-4">
-            {lectures.map((lecture) => (
-              <div
-                key={lecture.id}
-                onClick={() => navigate(`/lectures/${lecture.id}`)}
-                className="bg-zinc-900 border border-zinc-800 hover:border-orange-500/50 rounded-xl p-6 cursor-pointer transition-all group"
-              >
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h3 className="text-white font-semibold group-hover:text-orange-500 transition-colors">
-                      {lecture.title}
-                    </h3>
-                    <p className="text-zinc-500 text-sm mt-1 line-clamp-2">{lecture.content}</p>
-                  </div>
-                  <span className="text-zinc-600 text-xs ml-4 shrink-0">
-                    {new Date(lecture.created_at).toLocaleDateString('ko-KR')}
-                  </span>
-                </div>
+      <div className="max-w-4xl mx-auto px-4 py-6 md:py-10">
+        {WEEKS.map((week) => {
+          const weekLectures = LECTURES.filter((l) => l.week === week);
+          return (
+            <div key={week} className="mb-8 md:mb-12">
+              {/* Week Header */}
+              <div className="flex items-center gap-3 mb-4">
+                <span className="bg-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+                  {week}주차
+                </span>
+                <div className="h-px flex-1 bg-gray-200" />
               </div>
-            ))}
-          </div>
-        )}
+
+              {/* Lecture Cards */}
+              <div className="grid gap-3">
+                {weekLectures.map((lecture, idx) => (
+                  <button
+                    key={lecture.id}
+                    onClick={() => navigate(`/lectures/${lecture.id}`)}
+                    className="w-full text-left bg-white border border-gray-200 hover:border-orange-400 hover:shadow-md rounded-xl p-4 md:p-5 transition-all group"
+                  >
+                    <div className="flex items-start gap-3 md:gap-4">
+                      {/* Day number */}
+                      <div className="shrink-0 w-9 h-9 md:w-10 md:h-10 rounded-full bg-gray-100 group-hover:bg-orange-50 flex items-center justify-center">
+                        <span className="text-xs font-bold text-gray-500 group-hover:text-orange-500">
+                          {(week - 1) * 5 + idx + 1}일
+                        </span>
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                          <span className={`text-xs font-medium px-2 py-0.5 rounded border ${getSubjectStyle(lecture.subject)}`}>
+                            {lecture.subject}
+                          </span>
+                          <span className="text-xs text-gray-400">{lecture.date}</span>
+                        </div>
+                        <h3 className="text-sm md:text-base font-semibold text-gray-900 group-hover:text-orange-600 transition-colors mb-1">
+                          {lecture.topic}
+                        </h3>
+                        <p className="text-xs text-gray-500 line-clamp-1 hidden md:block">
+                          {lecture.learning_goal}
+                        </p>
+                      </div>
+
+                      {/* Arrow */}
+                      <span className="shrink-0 text-gray-300 group-hover:text-orange-400 text-lg transition-colors">
+                        →
+                      </span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
