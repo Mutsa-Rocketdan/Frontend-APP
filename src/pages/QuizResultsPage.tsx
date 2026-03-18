@@ -27,139 +27,179 @@ export const QuizResultsPage = () => {
   const best = results.length ? Math.max(...results.map((r) => r.score)) : 0;
 
   return (
-    <div className="app-container bg-white min-h-screen flex flex-col">
+    <div className="app-container min-h-screen flex flex-col">
       {/* Header */}
-      <header className="flex items-center px-4 pt-12 pb-3 justify-between border-b border-[#E5E3DE]">
+      <div className="bg-white/90 backdrop-blur-sm border-b border-[#E9E1D6] flex items-center px-5 pt-14 pb-4">
         {latest ? (
-          <button onClick={() => navigate('/')} className="w-11 h-11 flex items-center text-slate-400">
+          <button onClick={() => navigate('/')} className="w-10 h-10 flex items-center text-[#B0A498]">
             <span className="material-symbols-outlined text-[22px]">close</span>
           </button>
         ) : (
-          <div className="w-11" />
+          <div className="w-10" />
         )}
-        <h2 className="text-base font-bold text-[#0D0D0D] flex-1 text-center pr-11">퀴즈 결과</h2>
-      </header>
+        <h2 className="flex-1 text-center text-[15px] font-semibold text-[#171717]">퀴즈 결과</h2>
+        <div className="w-10" />
+      </div>
 
       <div className="flex-1 overflow-y-auto pb-28">
         {latest ? (
-          <>
-            {/* Score display */}
-            <div className="flex flex-col items-center px-5 pt-10 pb-6 border-b border-[#E5E3DE]">
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">최종 점수</p>
-              <div className="flex items-baseline gap-1 mb-2">
-                <span className="text-7xl font-black text-primary leading-none">{latest.score}</span>
-                <span className="text-2xl font-bold text-slate-300">/ 100</span>
+          <div className="px-4 pt-4 space-y-3 anim-enter">
+            {/* 스코어 카드 — 가로 레이아웃 */}
+            <div className="bg-white rounded-2xl border border-[#E9E1D6] shadow-[0_2px_12px_rgba(0,0,0,0.04)] p-5 flex items-center gap-5">
+              <div className="relative w-[88px] h-[88px] shrink-0">
+                <svg viewBox="0 0 88 88" className="w-full h-full -rotate-90">
+                  <circle cx="44" cy="44" r="34" fill="none" stroke="#E9E1D6" strokeWidth="6" />
+                  <circle
+                    cx="44" cy="44" r="34" fill="none" stroke="#FF6A00" strokeWidth="6"
+                    strokeDasharray={`${2 * Math.PI * 34}`}
+                    strokeDashoffset={`${2 * Math.PI * 34 * (1 - latest.score / 100)}`}
+                    strokeLinecap="round"
+                    className="transition-all duration-700"
+                  />
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-[30px] font-bold text-[#FF6A00] leading-none tracking-[-0.03em]">{latest.score}</span>
+                  <span className="text-[10px] text-[#A39586] mt-1 font-normal tracking-wide">점</span>
+                </div>
               </div>
-              <p className="text-slate-400 text-sm mt-2">{latest.total}문제 중 {latest.correctCount}개 정답</p>
+              <div className="flex-1">
+                <p className="text-[15px] font-semibold text-[#171717] leading-snug mb-1">
+                  {latest.score >= 80 ? '잘 했어요' : latest.score >= 60 ? '조금 아쉬워요' : '다시 도전해봐요'}
+                </p>
+                <p className="text-[13px] text-[#A39586]">
+                  {latest.total}문제 중 <span className="text-[#171717] font-semibold">{latest.correctCount}개</span> 정답
+                </p>
+                <div className="mt-2.5">
+                  <span className={`inline-block text-[11px] font-semibold px-2.5 py-1 rounded-full ${
+                    latest.score >= 80
+                      ? 'bg-[#FFF4EA] text-[#FF6A00] border border-[#F5C99A]'
+                      : 'bg-[#F6F0E8] text-[#8A8078] border border-[#E9E1D6]'
+                  }`}>
+                    {latest.score >= 80 ? '합격' : '불합격'}
+                  </span>
+                </div>
+              </div>
             </div>
 
-            {/* Progress bar */}
-            <div className="px-5 pt-5 pb-5 border-b border-[#E5E3DE] space-y-2">
-              <div className="flex justify-between items-center">
-                <p className="text-sm font-semibold text-[#0D0D0D]">
-                  {latest.score >= 80 ? '합격 기준을 넘었어요!' : `합격 커트라인까지 ${80 - latest.score}점 남았습니다`}
-                </p>
-                <p className="text-primary font-bold text-sm">{latest.score}%</p>
+            {/* 스탯 */}
+            <div className="bg-white rounded-xl border border-[#E9E1D6] shadow-[0_1px_6px_rgba(0,0,0,0.03)] flex">
+              {[
+                { label: '맞은 문제', value: latest.correctCount, orange: true },
+                { label: '틀린 문제', value: latest.total - latest.correctCount, orange: false },
+                { label: '점수', value: `${latest.score}점`, orange: true },
+              ].map((s, i) => (
+                <div key={s.label} className={`flex-1 text-center px-3 py-4 ${i < 2 ? 'border-r border-[#E9E1D6]' : ''}`}>
+                  <p className={`text-[18px] font-bold tracking-[-0.02em] ${s.orange ? 'text-[#FF6A00]' : 'text-[#8A8078]'}`}>{s.value}</p>
+                  <p className="text-[10px] text-[#A39586] mt-0.5 tracking-wide">{s.label}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* 합격 기준 */}
+            <div className="bg-white rounded-xl border border-[#E9E1D6] shadow-[0_1px_6px_rgba(0,0,0,0.03)] p-4">
+              <div className="flex justify-between items-center mb-3">
+                <p className="text-[13px] font-medium text-[#6F6A64]">합격 기준</p>
+                <span className="text-[11px] text-[#A39586]">커트라인 80점</span>
               </div>
-              <div className="rounded-full bg-[#F5F4F1] h-2.5 overflow-hidden">
-                <div className="h-full bg-primary rounded-full transition-all duration-700" style={{ width: `${latest.score}%` }} />
+              <div className="h-1.5 rounded-full bg-[#E9E1D6] overflow-hidden">
+                <div className="h-full bg-[#FF6A00] rounded-full transition-all duration-700" style={{ width: `${latest.score}%` }} />
               </div>
-              <p className="text-slate-400 text-xs">
-                {latest.score >= 80 ? '개념을 잘 이해하고 있어요!' : '조금만 더 힘내세요! 다음에는 합격할 수 있어요.'}
+              <p className="text-[12px] text-[#A39586] mt-2">
+                {latest.score >= 80 ? '합격 기준을 통과했어요.' : `합격까지 ${80 - latest.score}점 남았습니다.`}
               </p>
             </div>
 
-            {/* Weakness analysis */}
-            <section className="px-5 pt-5 pb-5 border-b border-[#E5E3DE]">
-              <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">취약 개념 분석</h2>
+            {/* 취약 개념 */}
+            <div className="bg-white rounded-xl border border-[#E9E1D6] shadow-[0_1px_6px_rgba(0,0,0,0.03)] p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#B0A498] mb-3">취약 개념</p>
               <div className="space-y-0">
                 {WEAKNESS_MOCK.map((w, i) => (
-                  <div key={i} className={`flex items-center gap-4 py-4 ${i < WEAKNESS_MOCK.length - 1 ? 'border-b border-[#E5E3DE]' : ''}`}>
-                    <div className="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center shrink-0">
-                      <span className="material-symbols-outlined text-red-500 text-[18px]">{w.icon}</span>
+                  <div key={i} className={`flex items-center gap-3 py-3 ${i < WEAKNESS_MOCK.length - 1 ? 'border-b border-[#E9E1D6]' : ''}`}>
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 bg-[#F6F0E8] border border-[#E9E1D6]">
+                      <span className="material-symbols-outlined text-[#364152] text-[16px]">{w.icon}</span>
                     </div>
                     <div className="flex-1">
-                      <h4 className="font-bold text-sm text-[#0D0D0D]">{w.label}</h4>
-                      <p className="text-slate-400 text-xs">오답 {w.count}문제 발생</p>
+                      <h4 className="text-[13px] font-semibold text-[#171717]">{w.label}</h4>
+                      <p className="text-[11px] text-[#A39586]">오답 {w.count}문제</p>
                     </div>
-                    <span className="material-symbols-outlined text-slate-300 text-[20px]">chevron_right</span>
                   </div>
                 ))}
               </div>
-            </section>
+            </div>
 
-            {/* CTAs */}
-            <div className="px-5 pt-5 space-y-3">
+            {/* CTA */}
+            <div className="space-y-2.5 pb-4">
               <button
                 onClick={() => navigate(-1)}
-                className="w-full py-4 rounded-lg border border-primary text-primary font-bold hover:bg-primary/5 transition-all"
+                className="w-full h-[52px] border border-[#E9E1D6] bg-white text-[#4D4840] font-medium text-[14px] rounded-xl transition-all flex items-center justify-center gap-2 hover:bg-[#FFF4EA] hover:border-[#F5C99A]"
               >
+                <span className="material-symbols-outlined text-[18px] text-[#B0A498]">replay</span>
                 틀린 문제 다시 풀기
               </button>
               <Link
                 to="/"
-                className="block w-full py-4 rounded-lg bg-[#FF6A00] text-white font-bold text-center hover:bg-primary-dark transition-all"
+                className="btn-press w-full h-[52px] bg-[#FF6A00] hover:bg-[#E05E00] text-white font-semibold text-[15px] rounded-xl shadow-[0_4px_16px_rgba(255,106,0,0.22)] transition-all flex items-center justify-center gap-2"
               >
-                관련 가이드 복습하기
+                <span className="material-symbols-outlined text-[18px]">menu_book</span>
+                학습 가이드 복습하기
               </Link>
             </div>
-          </>
+          </div>
         ) : (
-          /* History view */
-          <div className="px-5 py-5 space-y-5">
-            {/* Stats row */}
+          /* 히스토리 뷰 */
+          <div className="px-4 py-4 space-y-4">
             {!loading && results.length > 0 && (
-              <div className="flex items-center gap-0 border border-[#E5E3DE] rounded-xl overflow-hidden">
+              <div className="bg-white rounded-xl border border-[#E9E1D6] shadow-[0_1px_4px_rgba(0,0,0,0.04)] flex">
                 {[
-                  { label: '평균점수', val: avg, color: 'text-primary' },
-                  { label: '최고점수', val: best, color: 'text-emerald-500' },
-                  { label: '총 퀴즈', val: results.length, color: 'text-[#0D0D0D]' },
-                ].map((s, i, arr) => (
-                  <div key={i} className={`flex-1 text-center py-4 ${i < arr.length - 1 ? 'border-r border-[#E5E3DE]' : ''}`}>
-                    <p className={`text-2xl font-black ${s.color}`}>{s.val}</p>
-                    <p className="text-[10px] text-slate-400 mt-0.5 font-semibold uppercase tracking-wide">{s.label}</p>
+                  { label: '평균점수', val: avg, orange: true },
+                  { label: '최고점수', val: best, orange: true },
+                  { label: '총 퀴즈', val: results.length, orange: false },
+                ].map((s, i) => (
+                  <div key={i} className={`flex-1 text-center px-4 py-4 ${i < 2 ? 'border-r border-[#E9E1D6]' : ''}`}>
+                    <p className={`text-[18px] font-bold tracking-[-0.02em] ${s.orange ? 'text-[#FF6A00]' : 'text-[#171717]'}`}>{s.val}</p>
+                    <p className="text-[10px] text-[#A39586] mt-0.5 uppercase tracking-wide">{s.label}</p>
                   </div>
                 ))}
               </div>
             )}
 
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest">퀴즈 기록</h3>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#B0A498] px-1">퀴즈 기록</p>
 
             {loading ? (
               <div className="flex justify-center py-12">
-                <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+                <div className="w-8 h-8 border-4 border-[#FF6A00] border-t-transparent rounded-full animate-spin" />
               </div>
             ) : results.length === 0 ? (
-              <div className="border border-[#E5E3DE] rounded-xl p-8 text-center">
-                <span className="material-symbols-outlined text-slate-200 text-[56px]" style={{ fontVariationSettings: "'FILL' 1" }}>quiz</span>
-                <p className="text-slate-500 mt-3 text-sm font-medium">아직 퀴즈 기록이 없어요</p>
-                <p className="text-slate-300 text-xs mt-1">강의를 선택해서 퀴즈를 풀어보세요</p>
-                <Link to="/" className="mt-4 inline-block bg-primary text-white text-sm font-bold px-5 py-2.5 rounded-lg">
+              <div className="bg-white rounded-xl border border-[#E9E1D6] p-8 text-center">
+                <span className="material-symbols-outlined text-[#E9E1D6] text-[56px]" style={{ fontVariationSettings: "'FILL' 1" }}>quiz</span>
+                <p className="text-[14px] text-[#6F6A64] mt-3 font-medium">아직 퀴즈 기록이 없어요</p>
+                <p className="text-[12px] text-[#A39586] mt-1">강의를 선택해서 퀴즈를 풀어보세요</p>
+                <Link to="/" className="mt-4 inline-block bg-[#FF6A00] text-white text-[14px] font-semibold px-5 py-2.5 rounded-xl">
                   강의 목록 보기
                 </Link>
               </div>
             ) : (
-              <div className="space-y-0 border border-[#E5E3DE] rounded-xl overflow-hidden">
+              <div className="bg-white rounded-xl border border-[#E9E1D6] shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden">
                 {results.map((r, i) => (
-                  <div key={r.id ?? i} className={`flex items-center gap-4 px-4 py-4 bg-white ${i < results.length - 1 ? 'border-b border-[#E5E3DE]' : ''}`}>
-                    <div className={`w-12 h-12 rounded-lg flex items-center justify-center shrink-0 ${
-                      r.score >= 80 ? 'bg-emerald-50' : r.score >= 60 ? 'bg-amber-50' : 'bg-red-50'
+                  <div key={r.id ?? i} className={`flex items-center gap-4 px-4 py-4 ${i < results.length - 1 ? 'border-b border-[#E9E1D6]' : ''}`}>
+                    <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 border ${
+                      r.score >= 80
+                        ? 'bg-[#FFF4EA] border-[#F5C99A]'
+                        : 'bg-[#F6F0E8] border-[#E9E1D6]'
                     }`}>
-                      <span className={`text-lg font-black ${
-                        r.score >= 80 ? 'text-emerald-500' : r.score >= 60 ? 'text-amber-500' : 'text-red-400'
-                      }`}>{r.score}</span>
+                      <span className={`text-[16px] font-bold tracking-[-0.02em] ${r.score >= 80 ? 'text-[#FF6A00]' : 'text-[#8A8078]'}`}>{r.score}</span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-[#0D0D0D] truncate">
+                      <p className="text-[14px] font-semibold text-[#171717] truncate">
                         퀴즈 #{r.quiz_id?.slice(0, 8) ?? r.id}
                       </p>
-                      <p className="text-xs text-slate-400 mt-0.5">
+                      <p className="text-[12px] text-[#A39586] mt-0.5">
                         {r.created_at ? new Date(r.created_at).toLocaleDateString('ko-KR') : '-'}
                       </p>
                     </div>
                     <button
                       onClick={() => navigate(`/quizzes/${r.quiz_id}`)}
-                      className="text-xs text-primary font-bold"
+                      className="text-[12px] text-[#FF6A00] font-semibold bg-[#FFF4EA] border border-[#F5C99A] px-3 py-1.5 rounded-lg"
                     >
                       다시 풀기
                     </button>

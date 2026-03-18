@@ -1,13 +1,17 @@
 import { Link, useLocation } from 'react-router-dom';
 
 const NAV_ITEMS = [
-  { id: 'home',      to: '/',          icon: 'home',      label: '홈' },
-  { id: 'study',     to: '/curriculum', icon: 'menu_book', label: '학습' },
-  { id: 'community', to: '#',           icon: 'group',     label: '커뮤니티' },
-  { id: 'profile',   to: '/profile',    icon: 'person',    label: '마이' },
+  { id: 'home', to: '/', icon: 'home', label: '홈' },
+  { id: 'study', to: '/curriculum', icon: 'menu_book', label: '학습' },
+  { id: 'community', to: '#', icon: 'group', label: '커뮤니티' },
+  { id: 'profile', to: '/profile', icon: 'person', label: '마이' },
 ];
 
-export const BottomNav = ({ active }: { active?: string }) => {
+interface Props {
+  active?: string;
+}
+
+export const BottomNav = ({ active }: Props) => {
   const { pathname } = useLocation();
   const resolveActive = (item: typeof NAV_ITEMS[0]) => {
     if (active) return active === item.id;
@@ -16,25 +20,24 @@ export const BottomNav = ({ active }: { active?: string }) => {
   };
 
   return (
-    <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-app z-50 bg-white border-t border-[#E5E3DE] px-2 pb-6 pt-2 flex">
+    <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] z-50 bg-white/95 backdrop-blur-sm border-t border-[#E9E1D6] px-2 pb-6 pt-2 flex">
       {NAV_ITEMS.map((item) => {
         const on = resolveActive(item);
         return (
           <Link
             key={item.id}
             to={item.to}
-            className={`flex flex-1 flex-col items-center justify-center gap-1 pt-1 transition-colors relative ${on ? 'text-primary' : 'text-slate-400'}`}
+            className="flex-1 flex flex-col items-center gap-1 py-1"
           >
-            {on && (
-              <span className="absolute top-0 left-1/2 -translate-x-1/2 w-5 h-0.5 bg-primary rounded-full" />
-            )}
             <span
-              className="material-symbols-outlined text-[22px]"
-              style={{ fontVariationSettings: on ? "'FILL' 1, 'wght' 500" : "'FILL' 0, 'wght' 400" }}
+              className={`material-symbols-outlined text-[24px] transition-colors ${on ? 'text-[#FF6A00]' : 'text-[#C4B8AA]'}`}
+              style={{ fontVariationSettings: on ? "'FILL' 1" : "'FILL' 0" }}
             >
               {item.icon}
             </span>
-            <p className="text-[9px] font-semibold uppercase tracking-wide leading-none">{item.label}</p>
+            <p className={`text-[10px] leading-none transition-colors ${on ? 'font-medium text-[#6F6A64]' : 'font-normal text-[#C4B8AA]'}`}>
+              {item.label}
+            </p>
           </Link>
         );
       })}

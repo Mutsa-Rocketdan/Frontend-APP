@@ -14,7 +14,7 @@ export const Navbar = () => {
   return (
     <nav className="bg-white border-b border-gray-200 px-4 md:px-6 py-3 flex items-center justify-between sticky top-0 z-40">
       <Link to="/">
-        <LikelionLogo size="sm" text="멋쟁이사자처럼" />
+        <LikelionLogo size="sm" />
       </Link>
 
       <div className="flex items-center gap-1 md:gap-4">

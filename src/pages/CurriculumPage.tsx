@@ -4,138 +4,112 @@ import { BottomNav } from '../components/BottomNav';
 
 export const CurriculumPage = () => {
   const navigate = useNavigate();
-  const currentWeek = 2; // mock: 현재 진행 주차
+  const currentWeek = 2;
   const total = WEEKS.length;
   const progress = Math.round((currentWeek / total) * 100);
 
   return (
-    <div className="app-container bg-white min-h-screen flex flex-col">
-      {/* Sticky header */}
-      <div className="sticky top-0 z-10 flex items-center bg-white px-4 py-3 justify-between border-b border-[#E5E3DE]">
-        <button
-          onClick={() => navigate(-1)}
-          className="w-11 h-11 flex items-center text-[#0D0D0D]"
-        >
+    <div className="app-container min-h-screen flex flex-col">
+      {/* Top bar */}
+      <div className="bg-white/90 backdrop-blur-sm border-b border-[#E9E1D6] px-5 pt-14 pb-4 flex items-center justify-between">
+        <button onClick={() => navigate(-1)} className="w-10 h-10 flex items-center text-[#B0A498]">
           <span className="material-symbols-outlined text-[22px]">arrow_back</span>
         </button>
-        <h2 className="text-base font-bold text-[#0D0D0D] flex-1 text-center">주차별 학습 모듈</h2>
-        <div className="w-11 flex justify-end">
-          <button className="p-2 rounded-lg hover:bg-slate-50 transition-colors">
-            <span className="material-symbols-outlined text-slate-600 text-[22px]">notifications</span>
-          </button>
+        <h2 className="text-[15px] font-semibold text-[#2C2018]">주차별 학습 모듈</h2>
+        <div className="w-10" />
+      </div>
+
+      {/* Stats row */}
+      <div className="px-5 py-4 border-b border-[#E9E1D6] flex divide-x divide-[#E9E1D6] anim-enter">
+        {[
+          { label: '진행 주차', value: `${currentWeek}주`, valueClass: 'text-[#FF6A00]' },
+          { label: '전체 주차', value: `${total}주`, valueClass: 'text-[#2C2018]' },
+          { label: '진행률', value: `${progress}%`, valueClass: 'text-[#FF6A00]' },
+        ].map((s) => (
+          <div key={s.label} className="flex-1 text-center px-4 py-2">
+            <p className={`text-[20px] font-bold ${s.valueClass}`}>{s.value}</p>
+            <p className="text-[11px] text-[#B0A498] uppercase tracking-wide mt-0.5">{s.label}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Progress bar */}
+      <div className="px-5 py-4 border-b border-[#E9E1D6] anim-enter-1">
+        <div className="flex justify-between mb-2">
+          <span className="text-[13px] font-semibold text-[#2C2018]">전체 학습 진행률</span>
+          <span className="text-[#FF6A00] font-bold text-[13px]">{progress}%</span>
+        </div>
+        <div className="h-1.5 rounded-full bg-[#E9E1D6] overflow-hidden">
+          <div className="h-full rounded-full transition-all duration-700" style={{ width: `${progress}%`, background: 'linear-gradient(90deg, #FFAA5C 0%, #FF6A00 60%, #E05000 100%)' }} />
         </div>
       </div>
 
-      <div className="flex-1 px-5 py-5 pb-28 space-y-5">
-        {/* Progress stat pills */}
-        <div className="flex items-center gap-3">
-          <div className="flex-1 flex items-center gap-3 px-4 py-3 rounded-xl border border-[#E5E3DE] bg-[#F5F4F1]">
-            <span className="text-primary text-2xl font-black">{String(currentWeek).padStart(2, '0')}</span>
-            <span className="text-slate-500 text-xs font-semibold uppercase tracking-wider">진행 주차</span>
-          </div>
-          <div className="flex-1 flex items-center gap-3 px-4 py-3 rounded-xl border border-[#E5E3DE] bg-[#F5F4F1]">
-            <span className="text-[#0D0D0D] text-2xl font-black">{String(total).padStart(2, '0')}</span>
-            <span className="text-slate-500 text-xs font-semibold uppercase tracking-wider">전체 주차</span>
-          </div>
-        </div>
+      {/* Timeline */}
+      <div className="px-4 pt-4 pb-28 space-y-3 anim-enter-2">
+        {WEEKS.map((week) => {
+          const weekLectures = LECTURES.filter((l) => l.week === week);
+          const isCompleted = week < currentWeek;
+          const isCurrent = week === currentWeek;
+          const isLocked = week > currentWeek;
 
-        {/* Overall progress bar */}
-        <div className="space-y-2">
-          <div className="flex justify-between items-center">
-            <p className="text-sm font-semibold text-[#0D0D0D]">전체 학습 진행률</p>
-            <p className="text-primary font-bold text-sm">{progress}%</p>
-          </div>
-          <div className="h-2 rounded-full bg-[#F5F4F1] overflow-hidden border border-[#E5E3DE]">
-            <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${progress}%` }} />
-          </div>
-        </div>
+          return (
+            <div
+              key={week}
+              className={`bg-white rounded-xl border p-4 shadow-[0_1px_4px_rgba(0,0,0,0.04)] transition-all ${
+                isCurrent ? 'border-[#F5C99A]' : 'border-[#E9E1D6]'
+              } ${isLocked ? 'opacity-50' : ''}`}
+            >
+              {/* Week header */}
+              <div className="flex items-center gap-2 mb-3">
+                <span className={`text-[11px] font-semibold uppercase tracking-[0.06em] ${isLocked ? 'text-[#C4B8AA]' : 'text-[#FF6A00]'}`}>
+                  WEEK {String(week).padStart(2, '0')}
+                </span>
+                {isCurrent && (
+                  <span className="text-[10px] font-semibold bg-[#FFF4EA] text-[#FF6A00] border border-[#F5C99A] px-2 py-0.5 rounded-full">진행중</span>
+                )}
+                {isCompleted && (
+                  <span className="text-[10px] font-semibold bg-[#FFF4EA] text-[#FF6A00] border border-[#F5C99A] px-2 py-0.5 rounded-full">완료</span>
+                )}
+                {weekLectures[0] && (
+                  <span className="text-[13px] font-semibold text-[#2C2018] ml-auto truncate max-w-[140px]">
+                    {weekLectures[0].subject}
+                  </span>
+                )}
+              </div>
 
-        {/* Timeline roadmap */}
-        <div>
-          <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-5">커리큘럼 로드맵</h3>
-          <div className="space-y-0">
-            {WEEKS.map((week, wi) => {
-              const weekLectures = LECTURES.filter((l) => l.week === week);
-              const isCompleted = week < currentWeek;
-              const isCurrent = week === currentWeek;
-              const isLocked = week > currentWeek;
-
-              return (
-                <div key={week} className="relative flex gap-4">
-                  {/* Timeline column */}
-                  <div className="flex flex-col items-center w-10 shrink-0">
-                    {/* Circle */}
-                    {isCompleted && (
-                      <div className="z-10 w-10 h-10 rounded-full bg-primary flex items-center justify-center shrink-0">
-                        <span className="material-symbols-outlined text-white text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>check</span>
-                      </div>
-                    )}
-                    {isCurrent && (
-                      <div className="z-10 w-10 h-10 rounded-full border-2 border-primary bg-white flex items-center justify-center shrink-0 relative">
-                        <span className="absolute inset-0 rounded-full animate-ping bg-primary/20" />
-                        <span className="text-primary font-black text-sm">{String(week).padStart(2, '0')}</span>
-                      </div>
-                    )}
-                    {isLocked && (
-                      <div className="z-10 w-10 h-10 rounded-full bg-[#F5F4F1] border border-[#E5E3DE] flex items-center justify-center shrink-0">
-                        <span className="material-symbols-outlined text-slate-400 text-[16px]">lock</span>
-                      </div>
-                    )}
-                    {/* Connector line */}
-                    {wi < WEEKS.length - 1 && (
-                      <div className={`w-0.5 flex-1 min-h-[1.5rem] my-1 ${isCompleted ? 'bg-primary/40' : 'bg-[#E5E3DE]'}`} />
-                    )}
-                  </div>
-
-                  {/* Card */}
-                  <div className={`flex-1 mb-4 rounded-xl border-2 p-4 transition-all ${
-                    isCurrent
-                      ? 'border-primary bg-white shadow-sm'
-                      : isCompleted
-                      ? 'border-[#E5E3DE] bg-white'
-                      : 'border-[#E5E3DE] bg-[#F5F4F1]'
-                  } ${isLocked ? 'opacity-60' : ''}`}>
-                    <span className="text-[10px] font-bold text-primary uppercase tracking-wider">Week {String(week).padStart(2, '0')}</span>
-                    <h4 className={`font-bold mt-0.5 leading-snug ${isLocked ? 'text-slate-400' : 'text-[#0D0D0D]'}`}>
-                      {weekLectures[0]?.subject ?? `${week}주차 학습`}
-                    </h4>
-                    <p className="text-slate-400 text-xs mt-1">
-                      {isCompleted ? '완료' : isCurrent ? '진행 중' : '잠금'} · {weekLectures.length}강의
-                    </p>
-
-                    {/* Lecture list */}
-                    {!isLocked && (
-                      <div className="mt-3 space-y-1">
-                        {weekLectures.map((lec) => (
-                          <button
-                            key={lec.id}
-                            onClick={() => navigate(`/lectures/${lec.id}`)}
-                            className="w-full text-left flex items-center gap-2 py-1.5"
-                          >
-                            <span className={`material-symbols-outlined text-[14px] ${isCompleted ? 'text-primary' : 'text-slate-300'}`}
-                              style={{ fontVariationSettings: isCompleted ? "'FILL' 1" : "'FILL' 0" }}>
-                              {isCompleted ? 'check_circle' : 'radio_button_unchecked'}
-                            </span>
-                            <span className="text-xs font-medium text-slate-600 truncate">{lec.topic}</span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-
-                    {isCurrent && (
-                      <button
-                        onClick={() => navigate(`/lectures/${weekLectures[0]?.id}`)}
-                        className="mt-4 w-full py-2.5 bg-primary text-white text-sm font-bold rounded-lg"
+              {/* Lectures list */}
+              {!isLocked && (
+                <div className="space-y-1 pl-1">
+                  {weekLectures.map((lec) => (
+                    <button
+                      key={lec.id}
+                      onClick={() => navigate(`/lectures/${lec.id}`)}
+                      className="w-full text-left flex items-center gap-2 py-1.5 hover:opacity-70 transition-opacity"
+                    >
+                      <span
+                        className={`material-symbols-outlined text-[14px] ${isCompleted ? 'text-[#FF6A00]' : 'text-[#C4B8AA]'}`}
+                        style={{ fontVariationSettings: isCompleted ? "'FILL' 1" : "'FILL' 0" }}
                       >
-                        학습 계속하기
-                      </button>
-                    )}
-                  </div>
+                        {isCompleted ? 'check_circle' : 'radio_button_unchecked'}
+                      </span>
+                      <span className="text-[13px] font-medium text-[#4D4840] truncate">{lec.topic}</span>
+                    </button>
+                  ))}
                 </div>
-              );
-            })}
-          </div>
-        </div>
+              )}
+
+              {/* CTA */}
+              {isCurrent && (
+                <button
+                  onClick={() => navigate(`/lectures/${weekLectures[0]?.id}`)}
+                  className="btn-press mt-3 w-full h-10 bg-[#FF6A00] hover:bg-[#E05E00] text-white font-semibold text-[14px] rounded-xl shadow-[0_4px_16px_rgba(255,106,0,0.22)] transition-all flex items-center justify-center gap-2"
+                >
+                  학습 계속하기
+                </button>
+              )}
+            </div>
+          );
+        })}
       </div>
 
       <BottomNav active="study" />
