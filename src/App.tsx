@@ -11,6 +11,8 @@ import { LectureDetailPage } from './pages/LectureDetailPage';
 import { QuizPage } from './pages/QuizPage';
 import { QuizResultsPage } from './pages/QuizResultsPage';
 import { StudyGuidePage } from './pages/StudyGuidePage';
+import { LectureUploadPage } from './pages/LectureUploadPage';
+import { TaskPollingPage } from './pages/TaskPollingPage';
 
 const ProfilePage = () => {
   const { user, logout } = useAuth();
@@ -106,6 +108,8 @@ function App() {
           <Route path="/quizzes/:id" element={<ProtectedRoute><QuizPage /></ProtectedRoute>} />
           <Route path="/quiz-results" element={<ProtectedRoute><QuizResultsPage /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+          <Route path="/upload" element={<ProtectedRoute><LectureUploadPage /></ProtectedRoute>} />
+          <Route path="/tasks/:taskId" element={<ProtectedRoute><TaskPollingPage /></ProtectedRoute>} />
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
