@@ -1,37 +1,51 @@
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
-import { LECTURES, WEEKS } from "../data/curriculum";
+import { getLectures } from "../api/lectures";
+import { getQuizResults, getQuiz } from "../api/quizzes";
+import type { LectureResponse } from "../types";
 import { BottomNav } from "../components/BottomNav";
 import { LikelionLogo } from "../components/LikelionLogo";
-
-const groupByWeek = () => {
-  const map: Record<number, typeof LECTURES> = {};
-  for (const lec of LECTURES) {
-    if (!map[lec.week]) map[lec.week] = [];
-    map[lec.week].push(lec);
-  }
-  return map;
-};
 
 export const LecturesPage = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const displayName = user?.nickname || user?.email?.split("@")[0] || "학습자";
 
+  const [lectures, setLectures] = useState<LectureResponse[]>([]);
+  const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    getLectures()
+      .then(res => setLectures((res.data as LectureResponse[]).filter(l => l.is_active !== false)))
+      .catch(() => {});
+
+    getQuizResults()
+      .then(async res => {
+        const quizIds = [...new Set(res.data.map(r => r.quiz_id))];
+        const lectureIds = await Promise.all(
+          quizIds.map(id => getQuiz(id).then(r => r.data.lecture_id).catch(() => null))
+        );
+        setCompletedIds(new Set(lectureIds.filter(Boolean) as string[]));
+      })
+      .catch(() => {});
+  }, []);
+
   const handleLogout = () => {
     logout();
     navigate("/login");
   };
 
-  const currentWeek = 2;
-  const totalWeeks = WEEKS.length;
-  const completedLectures = LECTURES.filter((l) => l.week < currentWeek).length;
-  const progress = Math.round((currentWeek / totalWeeks) * 100);
-
-  const byWeek = groupByWeek();
-  const weeks = Object.keys(byWeek)
-    .map(Number)
-    .sort((a, b) => a - b);
+  const byWeek: Record<number, LectureResponse[]> = {};
+  for (const lec of lectures) {
+    const w = lec.week ?? 0;
+    if (!byWeek[w]) byWeek[w] = [];
+    byWeek[w].push(lec);
+  }
+  const weeks = Object.keys(byWeek).map(Number).sort((a, b) => a - b);
+  const maxWeek = weeks.length ? Math.max(...weeks) : 1;
+  const currentWeek = maxWeek;
+  const progress = lectures.length ? Math.round((lectures.length / Math.max(lectures.length, 1)) * 100) : 0;
 
   return (
     <div className="app-container min-h-screen flex flex-col relative overflow-hidden">
@@ -60,12 +74,22 @@ export const LecturesPage = () => {
             </span>
           </div>
         </div>
-        <button
-          onClick={handleLogout}
-          className="absolute right-4 top-12 w-9 h-9 flex items-center justify-center text-[#B0A498] hover:text-[#2C2018] transition-colors"
-        >
-          <span className="material-symbols-outlined text-[22px]">logout</span>
-        </button>
+        <div className="absolute right-4 top-12 flex items-center gap-1">
+          {user?.role === 'admin' && (
+            <button
+              onClick={() => navigate('/upload')}
+              className="w-9 h-9 flex items-center justify-center text-[#FF6A00] hover:text-[#D45000] transition-colors"
+            >
+              <span className="material-symbols-outlined text-[22px]">upload_file</span>
+            </button>
+          )}
+          <button
+            onClick={handleLogout}
+            className="w-9 h-9 flex items-center justify-center text-[#B0A498] hover:text-[#2C2018] transition-colors"
+          >
+            <span className="material-symbols-outlined text-[22px]">logout</span>
+          </button>
+        </div>
       </div>
 
       {/* Greeting */}
@@ -154,13 +178,13 @@ export const LecturesPage = () => {
               valueClass: "text-[#FF6A00]",
             },
             {
-              label: "완료 강의",
-              value: `${completedLectures}개`,
+              label: "전체 강의",
+              value: `${lectures.length}개`,
               valueClass: "text-[#2C2018]",
             },
             {
               label: "전체 주차",
-              value: `${totalWeeks}주`,
+              value: `${weeks.length}주`,
               valueClass: "text-[#2C2018]",
             },
           ].map((s) => (
@@ -204,9 +228,15 @@ export const LecturesPage = () => {
       <div className="px-4 pt-4 pb-28 space-y-5 anim-enter-3">
         {weeks.map((week) => {
           const weekLectures = byWeek[week];
-          const isLocked = week > currentWeek;
-          const isCurrent = week === currentWeek;
-          const isCompleted = week < currentWeek;
+          const today = new Date(); today.setHours(0,0,0,0);
+          const isLectureLocked = (lec: LectureResponse) =>
+            lec.date ? new Date(lec.date) > today : false;
+          const allLocked = weekLectures.every(isLectureLocked);
+          const weekCompleted = weekLectures.filter(l => !isLectureLocked(l)).every(l => completedIds.has(l.id)) && weekLectures.some(l => !isLectureLocked(l));
+          const weekPartial = weekLectures.some(l => !isLectureLocked(l) && completedIds.has(l.id));
+          const isLocked = allLocked;
+          const isCurrent = !isLocked && !weekCompleted && weekPartial;
+          const isCompleted = !isLocked && weekCompleted;
 
           return (
             <div key={week}>
@@ -248,12 +278,12 @@ export const LecturesPage = () => {
                 {weekLectures.map((lec, i) => (
                   <button
                     key={lec.id}
-                    onClick={() => !isLocked && navigate(`/lectures/${lec.id}`)}
+                    onClick={() => !isLectureLocked(lec) && navigate(`/lectures/${lec.id}`)}
                     className={`group w-full flex items-center gap-3.5 px-4 py-2.5 text-left transition-all duration-150 ${
                       i < weekLectures.length - 1
                         ? "border-b border-[#F4EDE5]"
                         : ""
-                    } ${isLocked ? "cursor-default opacity-60" : "hover:bg-[#FFF8F3] active:bg-[#FFF0E6]"}`}
+                    } ${isLectureLocked(lec) ? "cursor-default opacity-60" : "hover:bg-[#FFF8F3] active:bg-[#FFF0E6]"}`}
                   >
                     {/* Icon box */}
                     <div
@@ -268,15 +298,13 @@ export const LecturesPage = () => {
                       <span
                         className="material-symbols-outlined text-[19px]"
                         style={{
-                          fontVariationSettings: isCompleted
-                            ? "'FILL' 1"
-                            : "'FILL' 0",
-                          color: isLocked ? "#C8BFB6" : "#FF6A00",
+                          fontVariationSettings: completedIds.has(lec.id) ? "'FILL' 1" : "'FILL' 0",
+                          color: isLectureLocked(lec) ? "#C8BFB6" : "#FF6A00",
                         }}
                       >
-                        {isLocked
+                        {isLectureLocked(lec)
                           ? "lock"
-                          : isCompleted
+                          : completedIds.has(lec.id)
                             ? "check_circle"
                             : "play_circle"}
                       </span>
@@ -285,9 +313,9 @@ export const LecturesPage = () => {
                     {/* Text */}
                     <div className="flex-1 min-w-0">
                       <p
-                        className={`text-[13.5px] font-medium leading-[1.45] truncate ${isLocked ? "text-[#C4B8AA]" : "text-[#171717]"}`}
+                        className={`text-[13.5px] font-medium leading-[1.45] truncate ${isLectureLocked(lec) ? "text-[#C4B8AA]" : "text-[#171717]"}`}
                       >
-                        {lec.topic}
+                        {lec.title}
                       </p>
                       <p className="text-[10.4px] font-normal text-[#B8AFA8] mt-[1px]">
                         {lec.subject} · {lec.date}
@@ -295,7 +323,7 @@ export const LecturesPage = () => {
                     </div>
 
                     {/* Chevron */}
-                    {!isLocked && (
+                    {!isLectureLocked(lec) && (
                       <span className="material-symbols-outlined text-[20px] transition-all duration-150 text-[#DDD5C8] group-hover:text-[#FF6A00] group-hover:translate-x-0.5">
                         chevron_right
                       </span>

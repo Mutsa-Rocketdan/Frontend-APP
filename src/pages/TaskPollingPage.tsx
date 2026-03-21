@@ -14,12 +14,13 @@ export const TaskPollingPage = () => {
   const { taskId } = useParams<{ taskId: string }>();
   const navigate = useNavigate();
   const task = useTaskPoller(taskId);
+  const displayTask = task;
 
   useEffect(() => {
-    if (task?.status === 'completed') {
+    if (displayTask?.status === 'completed') {
       setTimeout(() => navigate('/'), 1200);
     }
-  }, [task?.status, navigate]);
+  }, [displayTask?.status, navigate]);
 
   return (
     <div className="app-container min-h-screen flex flex-col relative overflow-hidden">
@@ -41,7 +42,7 @@ export const TaskPollingPage = () => {
       <div className="flex-1 flex flex-col items-center justify-center gap-8 px-8 anim-enter-1">
 
         {/* 완료 상태 */}
-        {task?.status === 'completed' ? (
+        {displayTask?.status === 'completed' ? (
           <>
             <div className="w-20 h-20 rounded-2xl bg-[#FFF4EA] border border-[#F5C99A] flex items-center justify-center">
               <span className="material-symbols-outlined text-[40px] text-[#FF6A00]" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
@@ -51,7 +52,7 @@ export const TaskPollingPage = () => {
               <p className="text-[13px] text-[#A39586] mt-1">강의 목록으로 이동합니다</p>
             </div>
           </>
-        ) : task?.status === 'failed' ? (
+        ) : displayTask?.status === 'failed' ? (
           <>
             <div className="w-20 h-20 rounded-2xl bg-[#FFF4EA] border border-[#F5C99A] flex items-center justify-center">
               <span className="material-symbols-outlined text-[40px] text-[#B0A498]">error</span>
@@ -86,8 +87,8 @@ export const TaskPollingPage = () => {
             {/* 진행률 바 */}
             <div className="w-full max-w-[280px]">
               <div className="flex justify-between text-[11px] text-[#A39586] mb-2">
-                <span>{STATUS_LABEL[task?.status ?? 'pending']}</span>
-                <span>{task?.progress ?? 0}%</span>
+                <span>{STATUS_LABEL[displayTask?.status ?? 'pending']}</span>
+                <span>{displayTask?.progress ?? 0}%</span>
               </div>
               <div className="h-2.5 bg-[#EDE6DE] rounded-full overflow-hidden">
                 <div

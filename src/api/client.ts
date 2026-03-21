@@ -17,13 +17,16 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
-// 401 → 로그인 페이지로
+// 401 → 로그인 페이지로 (데모 모드 제외)
 apiClient.interceptors.response.use(
   (res) => res,
   (err) => {
     if (err.response?.status === 401) {
-      localStorage.removeItem('access_token');
-      window.location.href = '/login';
+      const token = localStorage.getItem('access_token');
+      if (token !== 'demo_mode') {
+        localStorage.removeItem('access_token');
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(err);
   }

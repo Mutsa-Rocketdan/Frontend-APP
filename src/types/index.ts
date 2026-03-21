@@ -3,6 +3,7 @@ export interface UserResponse {
   id: string;
   email: string;
   nickname?: string;
+  role: 'user' | 'admin';
   is_active: boolean;
   created_at: string;
 }
@@ -30,6 +31,12 @@ export interface LectureResponse {
   user_id: string;
   title: string;
   content: string;
+  week?: number;
+  subject?: string;
+  instructor?: string;
+  session?: string;
+  date?: string;
+  is_active?: boolean;
   task_id?: string;
   created_at: string;
 }
@@ -37,6 +44,11 @@ export interface LectureResponse {
 export interface LectureCreate {
   title: string;
   content: string;
+  week?: number;
+  subject?: string;
+  instructor?: string;
+  session?: string;
+  date?: string;
 }
 
 // --- Concept ---
@@ -66,6 +78,15 @@ export interface QuizResponse {
   task_id?: string;
   created_at: string;
   questions: QuizQuestionResponse[];
+}
+
+// --- Guide ---
+export interface GuideResponse {
+  id: string;
+  lecture_id: string;
+  content: string;
+  key_points?: string[];
+  created_at: string;
 }
 
 // --- Quiz Result ---

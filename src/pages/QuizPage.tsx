@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getQuiz, submitQuizResult } from '../api/quizzes';
-import { getMockQuizByLectureId } from '../data/mockContent';
 import type { QuizResponse, QuizQuestionResponse } from '../types';
 
 export const QuizPage = () => {
@@ -17,13 +16,6 @@ export const QuizPage = () => {
 
   useEffect(() => {
     if (!id) return;
-    const mockQuiz = getMockQuizByLectureId(id);
-    if (mockQuiz) {
-      setQuiz(mockQuiz);
-      setAnswers(new Array(mockQuiz.questions.length).fill(''));
-      setLoading(false);
-      return;
-    }
     getQuiz(id)
       .then((res) => {
         setQuiz(res.data);
@@ -85,10 +77,17 @@ export const QuizPage = () => {
     const correctCount = answers.filter((a, i) => a === quiz.questions[i].correct_answer).length;
     const score = Math.round((correctCount / total) * 100);
     try {
-      const isMock = !!getMockQuizByLectureId(id);
-      if (!isMock) await submitQuizResult(id, { score, user_answers: answers });
-    } finally {
-      navigate('/quiz-results', { state: { score, total, correctCount } });
+      const res = await submitQuizResult(id, { score, user_answers: answers });
+      const raw = res.data.ai_feedback;
+      let aiFeedback: string[] | undefined;
+      if (typeof raw === 'string') {
+        try { aiFeedback = JSON.parse(raw); } catch { aiFeedback = [raw]; }
+      } else if (Array.isArray(raw)) {
+        aiFeedback = raw as string[];
+      }
+      navigate('/quiz-results', { state: { score, total, correctCount, aiFeedback, lectureId: quiz.lecture_id } });
+    } catch {
+      navigate('/quiz-results', { state: { score, total, correctCount, lectureId: quiz.lecture_id } });
     }
   };
 

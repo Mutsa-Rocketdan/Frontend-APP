@@ -1,11 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getConcepts } from '../api/lectures';
-import { createQuiz } from '../api/quizzes';
+import { getLectureById, getConcepts } from '../api/lectures';
+import { createQuiz, getQuizzesByLecture } from '../api/quizzes';
 import { useTaskPoller } from '../hooks/useTaskPoller';
-import { getLectureById } from '../data/curriculum';
-import { getMockConceptsByLectureId } from '../data/mockContent';
-import type { ConceptResponse } from '../types';
+import type { ConceptResponse, LectureResponse } from '../types';
 
 const MASTERY_COLOR = (s: number) =>
   s >= 0.7 ? 'text-[#FF6A00]' : s >= 0.4 ? 'text-[#8C7C72]' : 'text-[#A89E98]';
@@ -21,7 +19,8 @@ const MASTERY_BAR = (s: number) =>
 export const LectureDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const lecture = getLectureById(id ?? '');
+  const [lecture, setLecture] = useState<LectureResponse | null>(null);
+  const [lectureLoading, setLectureLoading] = useState(true);
   const [concepts, setConcepts] = useState<ConceptResponse[]>([]);
   const [loadingConcepts, setLoadingConcepts] = useState(true);
   const [quizTaskId, setQuizTaskId] = useState<string | undefined>(undefined);
@@ -32,16 +31,34 @@ export const LectureDetailPage = () => {
 
   useEffect(() => {
     if (!id) return;
-    const mock = getMockConceptsByLectureId(id);
-    if (mock.length) { setConcepts(mock); setLoadingConcepts(false); return; }
+    getLectureById(id)
+      .then((res) => setLecture(res.data))
+      .catch(() => setLecture(null))
+      .finally(() => setLectureLoading(false));
+  }, [id]);
+
+  useEffect(() => {
+    if (!id) return;
     getConcepts(id)
       .then((res) => setConcepts(res.data))
-      .catch(() => setConcepts(getMockConceptsByLectureId(id)))
+      .catch(() => setConcepts([]))
       .finally(() => setLoadingConcepts(false));
   }, [id]);
 
   useEffect(() => {
-    if (quizStatus === 'completed') navigate(`/quizzes/${id}`);
+    if (quizStatus !== 'completed' || !id) return;
+    // get the quiz ID for this lecture to navigate correctly
+    getQuizzesByLecture(id)
+      .then((res) => {
+        const quizzes = res.data;
+        if (quizzes.length > 0) {
+          const latest = quizzes[quizzes.length - 1];
+          navigate(`/quizzes/${latest.id}`);
+        } else {
+          navigate('/');
+        }
+      })
+      .catch(() => navigate('/'));
   }, [quizStatus, id, navigate]);
 
   const handleGenerateQuiz = useCallback(async () => {
@@ -49,17 +66,28 @@ export const LectureDetailPage = () => {
     setGeneratingQuiz(true);
     try {
       const res = await createQuiz(id);
-      const tid = res.data.task_id;
-      if (tid) setQuizTaskId(tid);
-      else navigate(`/quizzes/${id}`);
+      const tid = (res.data as any).task_id;
+      if (tid) {
+        setQuizTaskId(tid);
+      } else if (res.data.id) {
+        navigate(`/quizzes/${res.data.id}`);
+      }
     } catch {
-      navigate(`/quizzes/${id}`);
+      // ignore
     } finally {
       setGeneratingQuiz(false);
     }
   }, [id, generatingQuiz, navigate]);
 
   const isGenerating = generatingQuiz || (quizTaskId !== undefined && quizStatus !== 'completed' && quizStatus !== 'failed');
+
+  if (lectureLoading) {
+    return (
+      <div className="app-container min-h-screen flex items-center justify-center">
+        <div className="w-10 h-10 border-4 border-[#FF6A00] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   if (!lecture) {
     return (
@@ -80,7 +108,7 @@ export const LectureDetailPage = () => {
         <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-[#0D0D0D]" />
         <div className="absolute inset-0 flex items-center justify-center opacity-10">
           <span className="material-symbols-outlined text-white text-[96px]">
-            {lecture.subject.includes('Back') ? 'storage' : lecture.subject.includes('Front') ? 'code' : 'auto_awesome'}
+            {lecture.subject?.includes('Back') ? 'storage' : lecture.subject?.includes('Front') ? 'code' : 'auto_awesome'}
           </span>
         </div>
         <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 pt-14 pb-4">
@@ -101,28 +129,21 @@ export const LectureDetailPage = () => {
         {/* Meta */}
         <div className="px-5 pt-5 pb-4 border-b border-[#E9E1D6] anim-enter">
           <div className="flex items-center gap-2 mb-2">
-            <span className="px-2 py-0.5 bg-[#FFF4EA] text-[#FF6A00] text-[11px] font-semibold uppercase rounded-md border border-[#F5C99A]">
-              Week {String(lecture.week).padStart(2, '0')}
-            </span>
-            <span className="text-[12px] font-medium text-[#A39586]">{lecture.subject}</span>
+            {lecture.week != null && (
+              <span className="px-2 py-0.5 bg-[#FFF4EA] text-[#FF6A00] text-[11px] font-semibold uppercase rounded-md border border-[#F5C99A]">
+                Week {String(lecture.week).padStart(2, '0')}
+              </span>
+            )}
+            {lecture.subject && (
+              <span className="text-[12px] font-medium text-[#A39586]">{lecture.subject}</span>
+            )}
           </div>
-          <h1 className="text-[22px] font-bold leading-[1.35] tracking-[-0.02em] text-[#171717]">{lecture.topic}</h1>
-          <p className="text-[14px] leading-[1.65] text-[#A39586] mt-2">{lecture.learning_goal}</p>
-        </div>
-
-        {/* Learning goals */}
-        <div className="px-5 py-4 border-b border-[#E9E1D6] anim-enter-1">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#B0A498] mb-3">주요 학습 목표</p>
-          <div className="space-y-2">
-            <div className="flex items-start gap-3">
-              <span className="material-symbols-outlined text-[#FF6A00] text-[18px] mt-0.5 shrink-0" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-              <p className="text-[14px] font-medium text-[#171717] leading-[1.5]">{lecture.learning_goal}</p>
-            </div>
-            <div className="flex items-start gap-3">
-              <span className="material-symbols-outlined text-[#FF6A00] text-[18px] mt-0.5 shrink-0" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-              <p className="text-[14px] font-medium text-[#171717] leading-[1.5]">{lecture.subject} 핵심 개념 이해</p>
-            </div>
-          </div>
+          <h1 className="text-[22px] font-bold leading-[1.35] tracking-[-0.02em] text-[#171717]">{lecture.title}</h1>
+          {(lecture.instructor || lecture.date) && (
+            <p className="text-[13px] text-[#B0A498] mt-1.5">
+              {[lecture.instructor, lecture.date].filter(Boolean).join(' · ')}
+            </p>
+          )}
         </div>
 
         {/* Concepts */}
@@ -131,6 +152,11 @@ export const LectureDetailPage = () => {
           {loadingConcepts ? (
             <div className="flex justify-center py-8">
               <div className="w-8 h-8 border-4 border-[#FF6A00] border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : concepts.length === 0 ? (
+            <div className="py-6 text-center">
+              <span className="material-symbols-outlined text-[#DDD5C8] text-[40px]">auto_awesome</span>
+              <p className="text-[13px] text-[#B0A498] mt-2">AI가 개념을 분석 중이에요</p>
             </div>
           ) : (
             <div className="space-y-0">

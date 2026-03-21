@@ -4,6 +4,9 @@ import type { QuizResponse, QuizResultCreate, QuizResultResponse } from '../type
 export const createQuiz = (lectureId: string) =>
   apiClient.post<QuizResponse>(`/lectures/${lectureId}/quizzes`);
 
+export const getQuizzesByLecture = (lectureId: string) =>
+  apiClient.get<QuizResponse[]>(`/lectures/${lectureId}/quizzes`);
+
 export const getQuiz = (quizId: string) =>
   apiClient.get<QuizResponse>(`/quizzes/${quizId}`);
 

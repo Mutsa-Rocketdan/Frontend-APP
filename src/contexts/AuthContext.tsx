@@ -21,7 +21,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (token === 'demo_mode') {
       // 데모 모드: 서버 없이 mock 데이터로 체험
-      setUser({ id: 'demo', email: 'demo@example.com', nickname: '데모 사용자', is_active: true, created_at: new Date().toISOString() });
+      setUser({ id: 'demo', email: 'demo@example.com', nickname: '데모 사용자', role: 'admin', is_active: true, created_at: new Date().toISOString() });
       setIsLoading(false);
     } else if (token) {
       getMe()
