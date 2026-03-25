@@ -6,6 +6,7 @@ import { getQuizResults, getQuiz } from "../api/quizzes";
 import type { LectureResponse } from "../types";
 import { BottomNav } from "../components/BottomNav";
 import { LikelionLogo } from "../components/LikelionLogo";
+import { LECTURES as CURRICULUM } from "../data/curriculum";
 
 export const LecturesPage = () => {
   const { user, logout } = useAuth();
@@ -16,6 +17,15 @@ export const LecturesPage = () => {
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
+    if (import.meta.env.DEV) {
+      setLectures(CURRICULUM.map(l => ({
+        id: l.id, user_id: 'mock', title: l.topic, content: l.learning_goal,
+        week: l.week, subject: l.subject, instructor: l.instructor,
+        date: l.date, is_active: true, created_at: l.date + 'T09:00:00.000Z',
+      })));
+      return;
+    }
+
     getLectures()
       .then(res => setLectures((res.data as LectureResponse[]).filter(l => l.is_active !== false)))
       .catch(() => {});
@@ -279,7 +289,7 @@ export const LecturesPage = () => {
                   <button
                     key={lec.id}
                     onClick={() => !isLectureLocked(lec) && navigate(`/lectures/${lec.id}`)}
-                    className={`group w-full flex items-center gap-3.5 px-4 py-2.5 text-left transition-all duration-150 ${
+                    className={`group w-full flex items-center gap-3.5 px-4 py-3.5 text-left transition-all duration-150 ${
                       i < weekLectures.length - 1
                         ? "border-b border-[#F4EDE5]"
                         : ""

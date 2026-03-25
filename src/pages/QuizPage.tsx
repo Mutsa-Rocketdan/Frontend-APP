@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getQuiz, submitQuizResult } from '../api/quizzes';
 import type { QuizResponse, QuizQuestionResponse } from '../types';
+import { getMockQuizByLectureId } from '../data/mockContent';
 
 export const QuizPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -17,6 +18,15 @@ export const QuizPage = () => {
 
   useEffect(() => {
     if (!id) return;
+    if (import.meta.env.DEV) {
+      const mock = getMockQuizByLectureId(id);
+      if (mock) {
+        setQuiz(mock);
+        setAnswers(new Array(mock.questions.length).fill(''));
+      }
+      setLoading(false);
+      return;
+    }
     getQuiz(id)
       .then((res) => {
         setQuiz(res.data);

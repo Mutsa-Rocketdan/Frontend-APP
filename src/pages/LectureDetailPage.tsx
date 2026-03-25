@@ -4,6 +4,8 @@ import { getLectureById, getConcepts } from '../api/lectures';
 import { createQuiz } from '../api/quizzes';
 import { useTaskPoller } from '../hooks/useTaskPoller';
 import type { ConceptResponse, LectureResponse } from '../types';
+import { getLectureById as getCurriculumLecture } from '../data/curriculum';
+import { getMockConceptsByLectureId } from '../data/mockContent';
 
 const MASTERY_COLOR = (s: number) =>
   s >= 0.7 ? 'text-[#FF6A00]' : s >= 0.4 ? 'text-[#8C7C72]' : 'text-[#A89E98]';
@@ -32,6 +34,16 @@ export const LectureDetailPage = () => {
 
   useEffect(() => {
     if (!id) return;
+    if (import.meta.env.DEV) {
+      const mock = getCurriculumLecture(id);
+      if (mock) {
+        setLecture({ id: mock.id, user_id: 'mock', title: mock.topic, content: mock.learning_goal, week: mock.week, subject: mock.subject, instructor: mock.instructor, date: mock.date, is_active: true, created_at: mock.date + 'T09:00:00.000Z' });
+      }
+      setLectureLoading(false);
+      setConcepts(getMockConceptsByLectureId(id));
+      setLoadingConcepts(false);
+      return;
+    }
     getLectureById(id)
       .then((res) => setLecture(res.data))
       .catch(() => setLecture(null))
@@ -39,7 +51,7 @@ export const LectureDetailPage = () => {
   }, [id]);
 
   useEffect(() => {
-    if (!id) return;
+    if (!id || import.meta.env.DEV) return;
     getConcepts(id)
       .then((res) => setConcepts(res.data))
       .catch(() => setConcepts([]))
@@ -54,6 +66,10 @@ export const LectureDetailPage = () => {
 
   const handleGenerateQuiz = useCallback(async () => {
     if (!id || generatingQuiz) return;
+    if (import.meta.env.DEV) {
+      navigate(`/quizzes/${id}`);
+      return;
+    }
     setGeneratingQuiz(true);
     try {
       const res = await createQuiz(id);

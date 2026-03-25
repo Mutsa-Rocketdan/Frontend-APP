@@ -4,6 +4,8 @@ import { getLectureById, getGuide } from "../api/lectures";
 import { BottomNav } from "../components/BottomNav";
 import { LikelionLogo } from "../components/LikelionLogo";
 import type { LectureResponse, GuideResponse } from "../types";
+import { getLectureById as getCurriculumLecture } from "../data/curriculum";
+import { getMockStudyGuideByLectureId } from "../data/mockContent";
 
 export const StudyGuidePage = () => {
   const { id } = useParams<{ id: string }>();
@@ -14,6 +16,23 @@ export const StudyGuidePage = () => {
 
   useEffect(() => {
     if (!id) return;
+    if (import.meta.env.DEV) {
+      const mock = getCurriculumLecture(id);
+      if (mock) {
+        setLecture({ id: mock.id, user_id: 'mock', title: mock.topic, content: mock.learning_goal, week: mock.week, subject: mock.subject, instructor: mock.instructor, date: mock.date, is_active: true, created_at: mock.date + 'T09:00:00.000Z' });
+      }
+      const g = getMockStudyGuideByLectureId(id);
+      setGuide({
+        id: 'mock', lecture_id: id,
+        summary: g.summary,
+        key_summaries: g.keyPoints,
+        review_checklist: g.reviewPoints,
+        concept_map: { nodes: g.conceptMap.flatMap(c => [c.name, ...c.related]) },
+        created_at: new Date().toISOString(),
+      });
+      setLoading(false);
+      return;
+    }
     Promise.all([
       getLectureById(id).then((r) => setLecture(r.data)).catch(() => {}),
       getGuide(id).then((r) => setGuide(r.data)).catch(() => {}),
