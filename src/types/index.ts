@@ -22,6 +22,8 @@ export interface AITaskResponse {
   status: TaskStatus;
   progress: number;
   result_url?: string;
+  quiz_id?: string;
+  lecture_id?: string;
   created_at: string;
 }
 

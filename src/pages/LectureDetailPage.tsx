@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getLectureById, getConcepts } from '../api/lectures';
-import { createQuiz, getQuizzesByLecture } from '../api/quizzes';
+import { createQuiz } from '../api/quizzes';
 import { useTaskPoller } from '../hooks/useTaskPoller';
 import type { ConceptResponse, LectureResponse } from '../types';
 
@@ -24,6 +24,7 @@ export const LectureDetailPage = () => {
   const [concepts, setConcepts] = useState<ConceptResponse[]>([]);
   const [loadingConcepts, setLoadingConcepts] = useState(true);
   const [quizTaskId, setQuizTaskId] = useState<string | undefined>(undefined);
+  const [pendingQuizId, setPendingQuizId] = useState<string | undefined>(undefined);
   const [generatingQuiz, setGeneratingQuiz] = useState(false);
 
   const quizTask = useTaskPoller(quizTaskId);
@@ -46,28 +47,19 @@ export const LectureDetailPage = () => {
   }, [id]);
 
   useEffect(() => {
-    if (quizStatus !== 'completed' || !id) return;
-    // get the quiz ID for this lecture to navigate correctly
-    getQuizzesByLecture(id)
-      .then((res) => {
-        const quizzes = res.data;
-        if (quizzes.length > 0) {
-          const latest = quizzes[quizzes.length - 1];
-          navigate(`/quizzes/${latest.id}`);
-        } else {
-          navigate('/');
-        }
-      })
-      .catch(() => navigate('/'));
-  }, [quizStatus, id, navigate]);
+    if (quizStatus !== 'completed') return;
+    const qid = pendingQuizId ?? quizTask?.quiz_id;
+    navigate(qid ? `/quizzes/${qid}` : '/');
+  }, [quizStatus, pendingQuizId, quizTask?.quiz_id, navigate]);
 
   const handleGenerateQuiz = useCallback(async () => {
     if (!id || generatingQuiz) return;
     setGeneratingQuiz(true);
     try {
       const res = await createQuiz(id);
-      const tid = (res.data as any).task_id;
+      const tid = res.data.task_id;
       if (tid) {
+        setPendingQuizId(res.data.id);
         setQuizTaskId(tid);
       } else if (res.data.id) {
         navigate(`/quizzes/${res.data.id}`);
