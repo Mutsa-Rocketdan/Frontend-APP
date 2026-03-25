@@ -7,12 +7,8 @@ export const createLecture = (data: LectureCreate) =>
 export const getLectures = () =>
   apiClient.get<LectureResponse[]>('/lectures');
 
-export const getLectureById = async (id: string) => {
-  const res = await apiClient.get<LectureResponse[]>('/lectures');
-  const lecture = res.data.find((l) => l.id === id);
-  if (!lecture) throw new Error('Lecture not found');
-  return { ...res, data: lecture };
-};
+export const getLectureById = (id: string) =>
+  apiClient.get<LectureResponse>(`/lectures/${id}`);
 
 export const getConcepts = (lectureId: string) =>
   apiClient.get<ConceptResponse[]>(`/lectures/${lectureId}/concepts`);
