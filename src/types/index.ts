@@ -61,6 +61,9 @@ export interface ConceptResponse {
 }
 
 // --- Quiz ---
+export type QuizQuestionType = 'multiple_choice' | 'short_answer' | 'fill_blank' | 'code';
+export type QuizDifficulty = 'easy' | 'medium' | 'hard';
+
 export interface QuizQuestionResponse {
   id: number;
   quiz_id: string;
@@ -68,6 +71,8 @@ export interface QuizQuestionResponse {
   options: string[];
   correct_answer: string;
   explanation?: string;
+  type?: QuizQuestionType;
+  difficulty?: QuizDifficulty;
 }
 
 export interface QuizResponse {
@@ -84,8 +89,10 @@ export interface QuizResponse {
 export interface GuideResponse {
   id: string;
   lecture_id: string;
-  content: string;
-  key_points?: string[];
+  summary: string;
+  key_summaries: string[];
+  review_checklist: string[];
+  concept_map?: Record<string, unknown>;
   created_at: string;
 }
 

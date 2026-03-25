@@ -65,16 +65,25 @@ export const StudyGuidePage = () => {
           </div>
         ) : (
           <>
-            {/* 핵심 요약 key_points */}
-            {guide.key_points && guide.key_points.length > 0 && (
+            {/* 강의 요약 */}
+            {guide.summary && (
+              <div className="bg-white rounded-xl border border-[#E9E1D6] shadow-[0_1px_4px_rgba(0,0,0,0.05)] p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="material-symbols-outlined text-[#FF6A00] text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>summarize</span>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#9C9894]">강의 요약</p>
+                </div>
+                <p className="text-[14px] text-[#6F6A64] leading-[1.65] whitespace-pre-wrap">{guide.summary}</p>
+              </div>
+            )}
+
+            {/* 핵심 요약 */}
+            {guide.key_summaries && guide.key_summaries.length > 0 && (
               <div className="bg-white rounded-xl border border-[#E9E1D6] shadow-[0_1px_4px_rgba(0,0,0,0.05)] p-4">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#9C9894] mb-3">핵심 요약</p>
                 <div className="space-y-0">
-                  {guide.key_points.map((point, i) => (
-                    <div key={i} className={`flex gap-4 py-3 ${i < guide.key_points!.length - 1 ? "border-b border-[#E9E1D6]" : ""}`}>
-                      <span className="text-[#FF6A00] font-bold text-[14px] shrink-0 w-6">
-                        {String(i + 1).padStart(2, "0")}.
-                      </span>
+                  {guide.key_summaries.map((point, i) => (
+                    <div key={i} className={`flex gap-4 py-3 ${i < guide.key_summaries.length - 1 ? 'border-b border-[#E9E1D6]' : ''}`}>
+                      <span className="text-[#FF6A00] font-bold text-[14px] shrink-0 w-6">{String(i + 1).padStart(2, '0')}.</span>
                       <p className="text-[14px] text-[#6F6A64] leading-[1.65]">{point}</p>
                     </div>
                   ))}
@@ -82,16 +91,39 @@ export const StudyGuidePage = () => {
               </div>
             )}
 
-            {/* 강의 요약 content */}
-            {guide.content && (
+            {/* 개념 맵 */}
+            {guide.concept_map && (guide.concept_map as any).nodes?.length > 0 && (
               <div className="bg-white rounded-xl border border-[#E9E1D6] shadow-[0_1px_4px_rgba(0,0,0,0.05)] p-4">
                 <div className="flex items-center gap-2 mb-3">
-                  <span className="material-symbols-outlined text-[#FF6A00] text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                    summarize
-                  </span>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#9C9894]">강의 요약</p>
+                  <span className="material-symbols-outlined text-[#FF6A00] text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>hub</span>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#9C9894]">개념 맵</p>
                 </div>
-                <p className="text-[14px] text-[#6F6A64] leading-[1.65] whitespace-pre-wrap">{guide.content}</p>
+                <div className="flex flex-wrap gap-2">
+                  {((guide.concept_map as any).nodes as string[]).map((node: string, i: number) => (
+                    <span key={i} className="px-3 py-1.5 rounded-lg text-[13px] font-medium border"
+                      style={{ background: i === 0 ? '#FFF4EA' : '#F8F4F0', color: i === 0 ? '#FF6A00' : '#6F6A64', borderColor: i === 0 ? '#F5C99A' : '#E9E1D6' }}>
+                      {node}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 복습 체크리스트 */}
+            {guide.review_checklist && guide.review_checklist.length > 0 && (
+              <div className="bg-white rounded-xl border border-[#E9E1D6] shadow-[0_1px_4px_rgba(0,0,0,0.05)] p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="material-symbols-outlined text-[#FF6A00] text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>checklist</span>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#9C9894]">복습 체크리스트</p>
+                </div>
+                <div className="space-y-0">
+                  {guide.review_checklist.map((item, i) => (
+                    <div key={i} className={`flex items-start gap-3 py-3 ${i < guide.review_checklist.length - 1 ? 'border-b border-[#E9E1D6]' : ''}`}>
+                      <div className="w-5 h-5 rounded border-2 border-[#E9E1D6] shrink-0 mt-[1px]" />
+                      <p className="text-[14px] text-[#6F6A64] leading-[1.65]">{item}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </>

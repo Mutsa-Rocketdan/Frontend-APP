@@ -12,7 +12,15 @@ export const QuizResultsPage = () => {
   const latest = (location.state as {
     score: number; total: number; correctCount: number;
     aiFeedback?: string[]; lectureId?: string;
-  } | null) ?? null;
+  } | null) ?? (import.meta.env.DEV ? {
+    score: 80, total: 4, correctCount: 3,
+    lectureId: 'mock-3',
+    aiFeedback: [
+      'JWT 구조와 Stateless 개념을 정확히 이해하고 있어요!',
+      '빈칸 문제에서 대소문자를 주의해서 입력하면 더 좋아요.',
+      'Refresh Token 활용 패턴을 학습 가이드로 복습해보세요.',
+    ],
+  } : null);
 
   useEffect(() => {
     getQuizResults()
