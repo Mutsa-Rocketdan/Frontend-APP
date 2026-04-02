@@ -315,7 +315,7 @@ export const LecturesPage = () => {
                       <p
                         className={`text-[13.5px] font-medium leading-[1.45] truncate ${isLectureLocked(lec) ? "text-[#C4B8AA]" : "text-[#171717]"}`}
                       >
-                        {lec.title}
+                        {lec.subject && lec.title.startsWith(lec.subject) ? lec.title.slice(lec.subject.length).replace(/^\s*[-–—]\s*/, '') : lec.title}
                       </p>
                       <p className="text-[10.4px] font-normal text-[#B8AFA8] mt-[1px]">
                         {lec.subject} · {lec.date}

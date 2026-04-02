@@ -1,12 +1,59 @@
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LECTURES, WEEKS } from '../data/curriculum';
+import { getLectures } from '../api/lectures';
+import type { LectureResponse } from '../types';
 import { BottomNav } from '../components/BottomNav';
 
 export const CurriculumPage = () => {
   const navigate = useNavigate();
-  const currentWeek = 2;
-  const total = WEEKS.length;
-  const progress = Math.round((currentWeek / total) * 100);
+  const [lectures, setLectures] = useState<LectureResponse[]>([]);
+
+  useEffect(() => {
+    getLectures()
+      .then((res) => setLectures((res.data as LectureResponse[]).filter((l) => l.is_active !== false)))
+      .catch(() => setLectures([]));
+  }, []);
+
+  const today = useMemo(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }, []);
+
+  const byWeek = useMemo(() => {
+    const map = new Map<number, LectureResponse[]>();
+    for (const lec of lectures) {
+      // 커리큘럼 화면은 "주차" 단위 UI이므로 week가 없는 강의는 제외
+      if (lec.week == null) continue;
+      const w = lec.week;
+      const arr = map.get(w) ?? [];
+      arr.push(lec);
+      map.set(w, arr);
+    }
+    for (const [w, arr] of map.entries()) {
+      arr.sort((a, b) => {
+        const ad = a.date ? new Date(a.date).getTime() : 0;
+        const bd = b.date ? new Date(b.date).getTime() : 0;
+        if (ad !== bd) return ad - bd;
+        return (a.title ?? '').localeCompare(b.title ?? '');
+      });
+      map.set(w, arr);
+    }
+    return map;
+  }, [lectures]);
+
+  const weeks = useMemo(() => Array.from(byWeek.keys()).sort((a, b) => a - b), [byWeek]);
+  const total = Math.max(weeks.length, 1);
+
+  const isLectureLocked = (lec: LectureResponse) =>
+    lec.date ? new Date(lec.date) > today : false;
+
+  const currentWeek = useMemo(() => {
+    const unlockedWeeks = weeks.filter((w) => (byWeek.get(w) ?? []).some((lec) => !isLectureLocked(lec)));
+    return unlockedWeeks.length ? Math.max(...unlockedWeeks) : (weeks.length ? Math.max(...weeks) : 1);
+  }, [weeks, byWeek, today]);
+
+  const progress = Math.round((Math.min(currentWeek, total) / total) * 100);
 
   return (
     <div className="app-container min-h-screen flex flex-col">
@@ -46,8 +93,8 @@ export const CurriculumPage = () => {
 
       {/* Timeline */}
       <div className="px-4 pt-4 pb-28 space-y-3 anim-enter-2">
-        {WEEKS.map((week) => {
-          const weekLectures = LECTURES.filter((l) => l.week === week);
+        {weeks.map((week) => {
+          const weekLectures = byWeek.get(week) ?? [];
           const isCompleted = week < currentWeek;
           const isCurrent = week === currentWeek;
           const isLocked = week > currentWeek;
@@ -83,7 +130,7 @@ export const CurriculumPage = () => {
                   {weekLectures.map((lec) => (
                     <button
                       key={lec.id}
-                      onClick={() => navigate(`/lectures/${lec.id}`)}
+                      onClick={() => !isLectureLocked(lec) && navigate(`/lectures/${lec.id}`)}
                       className="w-full text-left flex items-center gap-2 py-1.5 hover:opacity-70 transition-opacity"
                     >
                       <span
@@ -92,7 +139,7 @@ export const CurriculumPage = () => {
                       >
                         {isCompleted ? 'check_circle' : 'radio_button_unchecked'}
                       </span>
-                      <span className="text-[13px] font-medium text-[#4D4840] truncate">{lec.topic}</span>
+                      <span className="text-[13px] font-medium text-[#4D4840] truncate">{lec.subject && lec.title.startsWith(lec.subject) ? lec.title.slice(lec.subject.length).replace(/^\s*[-–—]\s*/, '') : lec.title}</span>
                     </button>
                   ))}
                 </div>
@@ -101,7 +148,10 @@ export const CurriculumPage = () => {
               {/* CTA */}
               {isCurrent && (
                 <button
-                  onClick={() => navigate(`/lectures/${weekLectures[0]?.id}`)}
+                  onClick={() => {
+                    const firstUnlocked = weekLectures.find((lec) => !isLectureLocked(lec));
+                    if (firstUnlocked) navigate(`/lectures/${firstUnlocked.id}`);
+                  }}
                   className="btn-press mt-3 w-full h-10 bg-[#FF6A00] hover:bg-[#E05E00] text-white font-semibold text-[14px] rounded-xl shadow-[0_4px_16px_rgba(255,106,0,0.22)] transition-all flex items-center justify-center gap-2"
                 >
                   학습 계속하기

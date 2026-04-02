@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getLectureById, getGuide } from "../api/lectures";
+import { getLectureById, getGuide, createGuide, getTaskStatus } from "../api/lectures";
 import { BottomNav } from "../components/BottomNav";
 import { LikelionLogo } from "../components/LikelionLogo";
 import type { LectureResponse, GuideResponse } from "../types";
@@ -11,14 +11,63 @@ export const StudyGuidePage = () => {
   const [lecture, setLecture] = useState<LectureResponse | null>(null);
   const [guide, setGuide] = useState<GuideResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const fetchGuide = useCallback(async () => {
+    if (!id) return;
+    try {
+      const r = await getGuide(id);
+      setGuide(r.data);
+      return true;
+    } catch {
+      return false;
+    }
+  }, [id]);
 
   useEffect(() => {
     if (!id) return;
     Promise.all([
       getLectureById(id).then((r) => setLecture(r.data)).catch(() => {}),
-      getGuide(id).then((r) => setGuide(r.data)).catch(() => {}),
+      fetchGuide(),
     ]).finally(() => setLoading(false));
-  }, [id]);
+  }, [id, fetchGuide]);
+
+  useEffect(() => {
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+  }, []);
+
+  const handleGenerate = useCallback(async () => {
+    if (!id || generating) return;
+    setGenerating(true);
+    setProgress(0);
+    try {
+      const res = await createGuide(id);
+      const taskId = res.data.task_id;
+      pollRef.current = setInterval(async () => {
+        try {
+          const t = await getTaskStatus(taskId);
+          setProgress(t.data.progress);
+          if (t.data.status === 'completed') {
+            if (pollRef.current) clearInterval(pollRef.current);
+            await fetchGuide();
+            setGenerating(false);
+          } else if (t.data.status === 'failed') {
+            if (pollRef.current) clearInterval(pollRef.current);
+            setGenerating(false);
+          }
+        } catch {
+          if (pollRef.current) clearInterval(pollRef.current);
+          setGenerating(false);
+        }
+      }, 2000);
+    } catch {
+      setGenerating(false);
+    }
+  }, [id, generating, fetchGuide]);
 
   return (
     <div className="app-container min-h-screen flex flex-col">
@@ -57,24 +106,51 @@ export const StudyGuidePage = () => {
           <div className="flex justify-center py-16">
             <div className="w-10 h-10 border-4 border-[#FF6A00] border-t-transparent rounded-full animate-spin" />
           </div>
+        ) : generating ? (
+          <div className="bg-white rounded-xl border border-[#E9E1D6] p-8 text-center">
+            <div className="w-12 h-12 border-4 border-[#FF6A00] border-t-transparent rounded-full animate-spin mx-auto" />
+            <p className="text-[14px] font-medium text-[#6F6A64] mt-4">AI가 학습 가이드를 생성하고 있어요</p>
+            <div className="mt-3 mx-auto max-w-[200px]">
+              <div className="h-1.5 bg-[#E9E1D6] rounded-full overflow-hidden">
+                <div className="h-full bg-[#FF6A00] rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
+              </div>
+              <p className="text-[11px] text-[#B0A498] mt-1">{progress}%</p>
+            </div>
+          </div>
         ) : !guide ? (
           <div className="bg-white rounded-xl border border-[#E9E1D6] p-8 text-center">
             <span className="material-symbols-outlined text-[#DDD5C8] text-[56px]" style={{ fontVariationSettings: "'FILL' 1" }}>menu_book</span>
             <p className="text-[14px] font-medium text-[#6F6A64] mt-3">학습 가이드가 아직 없어요</p>
-            <p className="text-[12px] text-[#A39586] mt-1">AI 분석이 완료되면 가이드가 생성됩니다</p>
+            <p className="text-[12px] text-[#A39586] mt-1">AI가 강의 내용을 분석해 가이드를 만들어 드려요</p>
+            <button
+              onClick={handleGenerate}
+              className="btn-press mt-4 px-6 py-2.5 bg-[#FF6A00] hover:bg-[#E05E00] text-white rounded-xl font-semibold text-[14px] shadow-[0_4px_16px_rgba(255,106,0,0.22)] transition-all inline-flex items-center gap-2"
+            >
+              <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>auto_awesome</span>
+              AI 가이드 생성하기
+            </button>
           </div>
         ) : (
           <>
-            {/* 핵심 요약 key_points */}
-            {guide.key_points && guide.key_points.length > 0 && (
+            {/* 강의 요약 */}
+            {guide.summary && (
+              <div className="bg-white rounded-xl border border-[#E9E1D6] shadow-[0_1px_4px_rgba(0,0,0,0.05)] p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="material-symbols-outlined text-[#FF6A00] text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>summarize</span>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#9C9894]">강의 요약</p>
+                </div>
+                <p className="text-[14px] text-[#6F6A64] leading-[1.65] whitespace-pre-wrap">{guide.summary}</p>
+              </div>
+            )}
+
+            {/* 핵심 요약 */}
+            {guide.key_summaries && guide.key_summaries.length > 0 && (
               <div className="bg-white rounded-xl border border-[#E9E1D6] shadow-[0_1px_4px_rgba(0,0,0,0.05)] p-4">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#9C9894] mb-3">핵심 요약</p>
                 <div className="space-y-0">
-                  {guide.key_points.map((point, i) => (
-                    <div key={i} className={`flex gap-4 py-3 ${i < guide.key_points!.length - 1 ? "border-b border-[#E9E1D6]" : ""}`}>
-                      <span className="text-[#FF6A00] font-bold text-[14px] shrink-0 w-6">
-                        {String(i + 1).padStart(2, "0")}.
-                      </span>
+                  {guide.key_summaries.map((point, i) => (
+                    <div key={i} className={`flex gap-4 py-3 ${i < guide.key_summaries.length - 1 ? 'border-b border-[#E9E1D6]' : ''}`}>
+                      <span className="text-[#FF6A00] font-bold text-[14px] shrink-0 w-6">{String(i + 1).padStart(2, '0')}.</span>
                       <p className="text-[14px] text-[#6F6A64] leading-[1.65]">{point}</p>
                     </div>
                   ))}
@@ -82,16 +158,39 @@ export const StudyGuidePage = () => {
               </div>
             )}
 
-            {/* 강의 요약 content */}
-            {guide.content && (
+            {/* 개념 맵 */}
+            {guide.concept_map && guide.concept_map.nodes && guide.concept_map.nodes.length > 0 && (
               <div className="bg-white rounded-xl border border-[#E9E1D6] shadow-[0_1px_4px_rgba(0,0,0,0.05)] p-4">
                 <div className="flex items-center gap-2 mb-3">
-                  <span className="material-symbols-outlined text-[#FF6A00] text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                    summarize
-                  </span>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#9C9894]">강의 요약</p>
+                  <span className="material-symbols-outlined text-[#FF6A00] text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>hub</span>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#9C9894]">개념 맵</p>
                 </div>
-                <p className="text-[14px] text-[#6F6A64] leading-[1.65] whitespace-pre-wrap">{guide.content}</p>
+                <div className="flex flex-wrap gap-2">
+                  {guide.concept_map.nodes.map((node, i) => (
+                    <span key={i} className="px-3 py-1.5 rounded-lg text-[13px] font-medium border"
+                      style={{ background: i === 0 ? '#FFF4EA' : '#F8F4F0', color: i === 0 ? '#FF6A00' : '#6F6A64', borderColor: i === 0 ? '#F5C99A' : '#E9E1D6' }}>
+                      {node}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 복습 체크리스트 */}
+            {guide.review_checklist && guide.review_checklist.length > 0 && (
+              <div className="bg-white rounded-xl border border-[#E9E1D6] shadow-[0_1px_4px_rgba(0,0,0,0.05)] p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="material-symbols-outlined text-[#FF6A00] text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>checklist</span>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#9C9894]">복습 체크리스트</p>
+                </div>
+                <div className="space-y-0">
+                  {guide.review_checklist.map((item, i) => (
+                    <div key={i} className={`flex items-start gap-3 py-3 ${i < guide.review_checklist.length - 1 ? 'border-b border-[#E9E1D6]' : ''}`}>
+                      <div className="w-5 h-5 rounded border-2 border-[#E9E1D6] shrink-0 mt-[1px]" />
+                      <p className="text-[14px] text-[#6F6A64] leading-[1.65]">{item}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </>

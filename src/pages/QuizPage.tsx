@@ -9,6 +9,7 @@ export const QuizPage = () => {
   const [currentIdx, setCurrentIdx] = useState(0);
   const [answers, setAnswers] = useState<string[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
+  const [textInput, setTextInput] = useState('');
   const [showExplanation, setShowExplanation] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -51,7 +52,12 @@ export const QuizPage = () => {
   const question: QuizQuestionResponse = quiz.questions[currentIdx];
   const total = quiz.questions.length;
   const isLast = currentIdx === total - 1;
-  const isCorrect = selected === question.correct_answer;
+  const qType = question.quiz_type ?? 'multiple_choice';
+  const hasOptions = question.options && question.options.length > 0;
+  const isTextType = qType === 'short_answer' || qType === 'fill_blank' || (qType === 'code' && !hasOptions);
+  const isCorrect = isTextType
+    ? textInput.trim().toLowerCase() === question.correct_answer.trim().toLowerCase()
+    : selected === question.correct_answer;
 
   const handleSelect = (opt: string) => {
     if (showExplanation) return;
@@ -62,11 +68,20 @@ export const QuizPage = () => {
     setAnswers(newAnswers);
   };
 
+  const handleTextSubmit = () => {
+    if (showExplanation || !textInput.trim()) return;
+    setShowExplanation(true);
+    const newAnswers = [...answers];
+    newAnswers[currentIdx] = textInput.trim();
+    setAnswers(newAnswers);
+  };
+
   const handleNext = () => {
     if (isLast) handleSubmit();
     else {
       setCurrentIdx((i) => i + 1);
       setSelected(null);
+      setTextInput('');
       setShowExplanation(false);
     }
   };
@@ -114,61 +129,108 @@ export const QuizPage = () => {
         <div className="h-full bg-[#FF6A00] transition-all duration-500" style={{ width: `${progress}%` }} />
       </div>
 
-      <div className="flex-1 flex flex-col overflow-y-auto pb-4">
+      <div className="flex-1 flex flex-col overflow-y-auto pb-28">
         {/* Question card */}
         <div className="mx-4 mt-4 mb-3 bg-white rounded-xl border border-[#E9E1D6] p-5 shadow-[0_1px_4px_rgba(0,0,0,0.04)] anim-enter">
-          <span className="inline-block bg-[#FFF4EA] text-[#FF6A00] text-[11px] font-semibold px-2 py-0.5 rounded-md mb-3">
-            Q{currentIdx + 1}
-          </span>
-          <h3 className="text-[17px] font-semibold leading-[1.5] tracking-[-0.01em] text-[#171717]">
-            {question.question_text}
-          </h3>
+          <div className="flex items-center gap-2 mb-3">
+            <span className="inline-block bg-[#FFF4EA] text-[#FF6A00] text-[11px] font-semibold px-2 py-0.5 rounded-md">
+              Q{currentIdx + 1}
+            </span>
+            {{
+              multiple_choice: <span className="text-[10px] font-medium text-[#B0A498] bg-[#F5F0ED] px-2 py-0.5 rounded-md">객관식</span>,
+              short_answer:    <span className="text-[10px] font-medium text-[#B0A498] bg-[#F5F0ED] px-2 py-0.5 rounded-md">주관식</span>,
+              fill_blank:      <span className="text-[10px] font-medium text-[#B0A498] bg-[#F5F0ED] px-2 py-0.5 rounded-md">빈칸 채우기</span>,
+              code:            <span className="text-[10px] font-medium text-[#B0A498] bg-[#F5F0ED] px-2 py-0.5 rounded-md">코드</span>,
+            }[qType]}
+            {question.difficulty && (
+              <span className="text-[10px] font-medium px-2 py-0.5 rounded-md" style={{
+                background: question.difficulty === 'easy' ? '#F0F8EE' : question.difficulty === 'medium' ? '#FFF4EA' : '#FFF0F0',
+                color: question.difficulty === 'easy' ? '#4A8A3A' : question.difficulty === 'medium' ? '#CC7A00' : '#CC3A3A',
+              }}>
+                {{ easy: '쉬움', medium: '보통', hard: '어려움' }[question.difficulty]}
+              </span>
+            )}
+          </div>
+          {qType === 'code' ? (
+            <pre
+              className="text-[13px] leading-[1.65] tracking-[-0.01em] text-[#171717] whitespace-pre-wrap font-mono bg-[#FFFCF7] border border-[#E9E1D6] rounded-xl p-4 overflow-x-auto"
+              style={{ tabSize: 4 as any }}
+            >
+              {question.question_text}
+            </pre>
+          ) : (
+            <h3 className="text-[17px] font-semibold leading-[1.5] tracking-[-0.01em] text-[#171717]">
+              {question.question_text}
+            </h3>
+          )}
         </div>
 
-        {/* Options */}
+        {/* 입력 영역 — 유형별 분기 */}
         <div className="mx-4 space-y-2">
-          {question.options.map((opt, i) => {
-            let containerClass = 'bg-white border border-[#E9E1D6]';
-            let textClass = 'text-[#171717]';
-            let iconEl = null;
+          {isTextType && qType === 'code' ? (
+            <div>
+              <textarea
+                value={textInput}
+                onChange={(e) => setTextInput(e.target.value)}
+                disabled={showExplanation}
+                placeholder="코드 또는 답을 입력하세요..."
+                rows={5}
+                className="w-full rounded-xl border border-[#E9E1D6] bg-[#1A1A1A] text-[#E8E8E8] px-4 py-3 text-[13px] font-mono placeholder:text-[#666] focus:outline-none focus:border-[#FF6A00] transition-all resize-none disabled:opacity-60"
+                style={showExplanation ? { borderColor: isCorrect ? '#FF6A00' : '#DDD4C8' } : {}}
+              />
+            </div>
+          ) : isTextType ? (
+            <div>
+              {qType === 'fill_blank' && (
+                <p className="text-[11px] text-[#B0A498] mb-2">빈칸에 들어갈 단어를 입력하세요</p>
+              )}
+              <input
+                type="text"
+                value={textInput}
+                onChange={(e) => setTextInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleTextSubmit()}
+                disabled={showExplanation}
+                placeholder={qType === 'fill_blank' ? '빈칸 답 입력...' : '답을 입력하세요...'}
+                className="w-full h-[52px] rounded-xl border border-[#E9E1D6] bg-[#FFFCF7] px-4 text-[14px] text-[#171717] placeholder:text-[#CCC4B8] focus:outline-none focus:border-[#FF6A00] focus:ring-2 focus:ring-[#FF6A00]/10 transition-all disabled:opacity-60"
+                style={showExplanation ? { borderColor: isCorrect ? '#FF6A00' : '#DDD4C8', background: isCorrect ? '#FFF4EA' : '#F6F0E8' } : {}}
+              />
+            </div>
+          ) : (
+            question.options.map((opt, i) => {
+              let containerClass = 'bg-white border border-[#E9E1D6]';
+              let textClass = 'text-[#171717]';
+              let iconEl = null;
 
-            if (showExplanation) {
-              if (opt === question.correct_answer) {
+              if (showExplanation) {
+                if (opt === question.correct_answer) {
+                  containerClass = 'border-2 border-[#FF6A00] bg-[#FFF4EA]';
+                  textClass = 'text-[#CC5200] font-semibold';
+                  iconEl = <span className="material-symbols-outlined text-[#FF6A00] text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>;
+                } else if (opt === selected) {
+                  containerClass = 'border border-[#DDD4C8] bg-[#EFE7DC]';
+                  textClass = 'text-[#6F6A64]';
+                  iconEl = <span className="material-symbols-outlined text-[#364152] text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>cancel</span>;
+                } else {
+                  containerClass = 'border border-[#E9E1D6] bg-white opacity-35';
+                }
+              } else if (opt === selected) {
                 containerClass = 'border-2 border-[#FF6A00] bg-[#FFF4EA]';
                 textClass = 'text-[#CC5200] font-semibold';
-                iconEl = (
-                  <span className="material-symbols-outlined text-[#FF6A00] text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                    check_circle
-                  </span>
-                );
-              } else if (opt === selected) {
-                containerClass = 'border border-[#DDD4C8] bg-[#EFE7DC]';
-                textClass = 'text-[#6F6A64]';
-                iconEl = (
-                  <span className="material-symbols-outlined text-[#364152] text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                    cancel
-                  </span>
-                );
-              } else {
-                containerClass = 'border border-[#E9E1D6] bg-white opacity-35';
               }
-            } else if (opt === selected) {
-              containerClass = 'border-2 border-[#FF6A00] bg-[#FFF4EA]';
-              textClass = 'text-[#CC5200] font-semibold';
-            }
 
-            return (
-              <div
-                key={i}
-                onClick={() => handleSelect(opt)}
-                style={{ animationDelay: `${i * 0.05}s` }}
-                className={`anim-enter flex items-center justify-between px-4 py-3.5 rounded-xl cursor-pointer transition-all duration-150 ${containerClass}`}
-              >
-                <p className={`text-[14px] font-medium leading-[1.5] flex-1 ${textClass}`}>{opt}</p>
-                {iconEl && <div className="ml-3 shrink-0">{iconEl}</div>}
-              </div>
-            );
-          })}
+              return (
+                <div
+                  key={i}
+                  onClick={() => handleSelect(opt)}
+                  style={{ animationDelay: `${i * 0.05}s` }}
+                  className={`anim-enter flex items-center justify-between px-4 py-3.5 rounded-xl cursor-pointer transition-all duration-150 ${containerClass}`}
+                >
+                  <p className={`text-[14px] font-medium leading-[1.5] flex-1 ${textClass}`}>{opt}</p>
+                  {iconEl && <div className="ml-3 shrink-0">{iconEl}</div>}
+                </div>
+              );
+            })
+          )}
         </div>
 
         {/* Explanation */}
@@ -207,6 +269,15 @@ export const QuizPage = () => {
           >
             {submitting ? '제출 중...' : isLast ? '결과 보기' : '다음으로'}
             {!submitting && <span className="material-symbols-outlined text-[20px]">arrow_forward</span>}
+          </button>
+        ) : isTextType ? (
+          <button
+            onClick={handleTextSubmit}
+            disabled={!textInput.trim()}
+            className="btn-press w-full h-[52px] bg-[#FF6A00] hover:bg-[#E05E00] text-white font-semibold text-[15px] rounded-xl shadow-[0_4px_16px_rgba(255,106,0,0.22)] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+          >
+            확인
+            <span className="material-symbols-outlined text-[20px]">check</span>
           </button>
         ) : (
           <div className="h-[52px] flex items-center justify-center">

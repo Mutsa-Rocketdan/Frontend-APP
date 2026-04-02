@@ -36,6 +36,8 @@ export interface LectureResponse {
   instructor?: string;
   session?: string;
   date?: string;
+  learning_goal?: string;
+  has_code_quiz?: boolean;
   is_active?: boolean;
   task_id?: string;
   created_at: string;
@@ -68,6 +70,15 @@ export interface QuizQuestionResponse {
   options: string[];
   correct_answer: string;
   explanation?: string;
+  quiz_type?: 'multiple_choice' | 'short_answer' | 'fill_blank' | 'code';
+  difficulty?: 'easy' | 'medium' | 'hard';
+}
+
+export interface QuizCreateOptions {
+  quiz_type?: string; // backward compatibility
+  quiz_types?: string[];
+  difficulty?: string;
+  count?: number;
 }
 
 export interface QuizResponse {
@@ -84,8 +95,13 @@ export interface QuizResponse {
 export interface GuideResponse {
   id: string;
   lecture_id: string;
-  content: string;
-  key_points?: string[];
+  summary: string;
+  key_summaries: string[];
+  review_checklist: string[];
+  concept_map: {
+    nodes: string[];
+    edges: { from: string; to: string }[];
+  };
   created_at: string;
 }
 

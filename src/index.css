@@ -171,3 +171,9 @@ body {
   background-size: 300% 300%;
   animation: btn-shimmer 8s ease infinite;
 }
+
+/* Bottom sheet slide up */
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}

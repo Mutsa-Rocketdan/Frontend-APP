@@ -14,7 +14,10 @@ export const getConcepts = (lectureId: string) =>
   apiClient.get<ConceptResponse[]>(`/lectures/${lectureId}/concepts`);
 
 export const getGuide = (lectureId: string) =>
-  apiClient.get<GuideResponse>(`/lectures/${lectureId}/guide`);
+  apiClient.get<GuideResponse>(`/lectures/${lectureId}/guides`);
+
+export const createGuide = (lectureId: string) =>
+  apiClient.post<AITaskResponse>(`/lectures/${lectureId}/guides`);
 
 export const getTaskStatus = (taskId: string) =>
   apiClient.get<AITaskResponse>(`/tasks/${taskId}`);

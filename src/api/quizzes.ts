@@ -1,8 +1,8 @@
 import { apiClient } from './client';
-import type { QuizResponse, QuizResultCreate, QuizResultResponse } from '../types';
+import type { QuizResponse, QuizResultCreate, QuizResultResponse, QuizCreateOptions } from '../types';
 
-export const createQuiz = (lectureId: string) =>
-  apiClient.post<QuizResponse>(`/lectures/${lectureId}/quizzes`);
+export const createQuiz = (lectureId: string, options?: QuizCreateOptions) =>
+  apiClient.post<QuizResponse>(`/lectures/${lectureId}/quizzes`, options ?? {});
 
 export const getQuizzesByLecture = (lectureId: string) =>
   apiClient.get<QuizResponse[]>(`/lectures/${lectureId}/quizzes`);
